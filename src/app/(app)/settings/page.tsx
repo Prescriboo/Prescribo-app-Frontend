@@ -9,6 +9,8 @@ import { usePatientHistoryStore } from '@/stores/patient-history-store'
 import { useDosageStore } from '@/stores/dosage-store'
 import { useFrequencyStore } from '@/stores/frequency-store'
 import { useDurationStore } from '@/stores/duration-store'
+import { useComplaintStore } from '@/stores/complaint-store'
+import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -274,16 +276,20 @@ function MasterDataTab() {
   const { items: dosages, addItem: addDosage, updateItem: updateDosage, deleteItem: deleteDosage } = useDosageStore()
   const { items: frequencies, addItem: addFreq, updateItem: updateFreq, deleteItem: deleteFreq } = useFrequencyStore()
   const { items: durations, addItem: addDur, updateItem: updateDur, deleteItem: deleteDur } = useDurationStore()
+  const { items: complaints, addItem: addComplaint, updateItem: updateComplaint, deleteItem: deleteComplaint } = useComplaintStore()
+  const { items: diagnoses, addItem: addDiagnosis, updateItem: updateDiagnosis, deleteItem: deleteDiagnosis } = useDiagnosisStore()
   const { addToast } = useUIStore()
-  const [activeSubTab, setActiveSubTab] = useState<'dosage' | 'frequency' | 'duration'>('dosage')
+  const [activeSubTab, setActiveSubTab] = useState<'dosage' | 'frequency' | 'duration' | 'complaint' | 'diagnosis'>('dosage')
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [value, setValue] = useState('')
 
   const config = {
-    dosage: { label: 'Dosage', items: dosages, add: addDosage, update: updateDosage, delete: deleteDosage, placeholder: 'e.g. 500mg' },
-    frequency: { label: 'Frequency', items: frequencies, add: addFreq, update: updateFreq, delete: deleteFreq, placeholder: 'e.g. 3 times daily' },
-    duration: { label: 'Duration', items: durations, add: addDur, update: updateDur, delete: deleteDur, placeholder: 'e.g. 7 days' },
+    dosage: { label: 'Dosage', items: dosages, add: addDosage, update: updateDosage, delete: deleteDosage, placeholder: 'e.g. 500mg', key: 'dosage' as const },
+    frequency: { label: 'Frequency', items: frequencies, add: addFreq, update: updateFreq, delete: deleteFreq, placeholder: 'e.g. 3 times daily', key: 'frequency' as const },
+    duration: { label: 'Duration', items: durations, add: addDur, update: updateDur, delete: deleteDur, placeholder: 'e.g. 7 days', key: 'duration' as const },
+    complaint: { label: 'Chief Complaint', items: complaints, add: addComplaint, update: updateComplaint, delete: deleteComplaint, placeholder: 'e.g. Fever, cough since 3 days', key: 'complaint' as const },
+    diagnosis: { label: 'Diagnosis', items: diagnoses, add: addDiagnosis, update: updateDiagnosis, delete: deleteDiagnosis, placeholder: 'e.g. Upper Respiratory Tract Infection', key: 'diagnosis' as const },
   }
 
   const current = config[activeSubTab]
@@ -293,7 +299,7 @@ function MasterDataTab() {
     const item = current.items.find(x => x.id === id)
     if (!item) return
     setEditingId(id)
-    setValue(activeSubTab === 'dosage' ? (item as any).dosage : activeSubTab === 'frequency' ? (item as any).frequency : (item as any).duration)
+    setValue((item as any)[config[activeSubTab].key])
     setShowModal(true)
   }
   const handleSave = () => {
@@ -317,13 +323,13 @@ function MasterDataTab() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><ListChecks className="w-[18px] h-[18px]" /> Master Data</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Manage dosage, frequency and duration master lists</p>
+          <p className="text-xs text-slate-400 mt-0.5">Manage dosage, frequency, duration, chief complaints and diagnosis master lists</p>
         </div>
         <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add {current.label}</Button>
       </div>
 
       <div className="flex gap-1 mb-4 bg-bg p-1 rounded-lg border border-border w-fit">
-        {(['dosage', 'frequency', 'duration'] as const).map((t) => (
+        {(['dosage', 'frequency', 'duration', 'complaint', 'diagnosis'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setActiveSubTab(t)}
@@ -345,7 +351,7 @@ function MasterDataTab() {
           </tr></thead>
           <tbody>
             {current.items.length > 0 ? current.items.map(item => {
-              const label = activeSubTab === 'dosage' ? (item as any).dosage : activeSubTab === 'frequency' ? (item as any).frequency : (item as any).duration
+              const label = (item as any)[current.key]
               return (
                 <tr key={item.id} className="hover:bg-slate-50 transition-all">
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{label}</td>

@@ -8,10 +8,13 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { useDosageStore } from '@/stores/dosage-store'
 import { useFrequencyStore } from '@/stores/frequency-store'
 import { useDurationStore } from '@/stores/duration-store'
+import { useComplaintStore } from '@/stores/complaint-store'
+import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { MultiAutocompleteInput } from '@/components/ui/multi-autocomplete-input'
 import { RotateCcw, Save, Plus, Trash2, ArrowLeft, Printer, Pencil, Clock, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +27,8 @@ export default function PrescriptionsClientPage() {
   const { items: dosages } = useDosageStore()
   const { items: frequencies } = useFrequencyStore()
   const { items: durations } = useDurationStore()
+  const { items: complaints } = useComplaintStore()
+  const { items: diagnoses } = useDiagnosisStore()
   const { addToast } = useUIStore()
 
   const patientId = searchParams.get('patient')
@@ -296,11 +301,22 @@ export default function PrescriptionsClientPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500">Chief Complaint</label>
-              <Input value={currentRx.complaint} onChange={e => setCurrentRx({ complaint: e.target.value })} placeholder="e.g. Fever, cough since 3 days" />
+              <MultiAutocompleteInput
+                value={currentRx.complaint}
+                onChange={val => setCurrentRx({ complaint: val })}
+                options={complaints.map(c => c.complaint)}
+                placeholder="e.g. Fever, cough since 3 days"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500">Diagnosis</label>
-              <Input value={currentRx.diagnosis} onChange={e => setCurrentRx({ diagnosis: e.target.value })} placeholder="e.g. Upper Respiratory Tract Infection" readOnly={!!editingRxId} />
+              <MultiAutocompleteInput
+                value={currentRx.diagnosis}
+                onChange={val => setCurrentRx({ diagnosis: val })}
+                options={diagnoses.map(d => d.diagnosis)}
+                placeholder="e.g. Upper Respiratory Tract Infection"
+                readOnly={!!editingRxId}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500">Notes / Advice</label>
