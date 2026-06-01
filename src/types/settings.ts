@@ -16,4 +16,5 @@ export interface SecuritySettings {
 export interface AppSettings {
   clinic: ClinicSettings
   security: SecuritySettings
+  templateStyle: 'header-footer' | 'header-only'
 }

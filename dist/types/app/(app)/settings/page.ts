@@ -1,8 +1,8 @@
-// File: /home/harvey/prescribo-nextjs/src/app/(app)/history/page.tsx
-import * as entry from '../../../../../src/app/(app)/history/page.js'
+// File: /home/harvey/prescribo-nextjs/src/app/(app)/settings/page.tsx
+import * as entry from '../../../../../src/app/(app)/settings/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
-type TEntry = typeof import('../../../../../src/app/(app)/history/page.js')
+type TEntry = typeof import('../../../../../src/app/(app)/settings/page.js')
 
 type SegmentParams<T extends Object = any> = T extends Record<string, any>
   ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }

@@ -12,6 +12,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
+import { usePrescriptionFooterStore } from '@/stores/prescription-footer-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,7 +26,8 @@ export default function PrescriptionsClientPage() {
   const router = useRouter()
   const { patients, getPatient } = usePatientStore()
   const { prescriptions, currentRx, setCurrentRx, addMedicineRow, removeMedicineRow, updateMedicineRow, addPrescription, updatePrescription, resetCurrentRx, setEditingRxId, editingRxId, paperSize, setPaperSize } = usePrescriptionStore()
-  const { clinic } = useSettingsStore()
+  const { clinic, templateStyle } = useSettingsStore()
+  const { items: footerLines } = usePrescriptionFooterStore()
   const { items: dosages } = useDosageStore()
   const { items: frequencies } = useFrequencyStore()
   const { items: durations } = useDurationStore()
@@ -227,8 +229,6 @@ export default function PrescriptionsClientPage() {
               <div className="text-[1.05rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
               <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
               <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
-              <div className="text-[0.65rem] text-slate-400 mt-0.5 font-medium">{clinic.regNo}</div>
-              <div className="text-[0.65rem] text-slate-400 mt-0.5">{clinic.address}</div>
             </div>
 
             <div className="text-[0.8rem] leading-relaxed text-slate-900 px-6">
@@ -291,13 +291,31 @@ export default function PrescriptionsClientPage() {
               </div>
             </div>
 
-            <div className="absolute bottom-6 right-8 text-center">
-              <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-              <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
-            </div>
-            {/* <div className="absolute bottom-6 left-8 text-[0.6rem] text-slate-400 max-w-[180px] leading-snug">
-              This prescription is generated digitally via Prescribo. Valid for 30 days.
-            </div> */}
+            {templateStyle === 'header-footer' && (
+              <>
+                <div className="px-6 pb-2 flex justify-end">
+                  <div className="text-center">
+                    <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+                    <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
+                  </div>
+                </div>
+                <div className="mt-auto pt-3 px-6 pb-6">
+                  <div className="border-t border-gray-200 pt-2 text-center">
+                    <div className="inline-flex flex-col gap-0.5 text-[0.6rem] text-slate-500 leading-relaxed">
+                      {footerLines.map(line => (
+                        <div key={line.id}><span className="font-bold text-slate-700">{line.label}:</span> {line.value}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            {templateStyle === 'header-only' && (
+              <div className="absolute bottom-6 right-8 text-center">
+                <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+                <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -469,8 +487,6 @@ export default function PrescriptionsClientPage() {
             <div className="text-[0.95rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
             <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
             <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
-            <div className="text-[0.65rem] text-slate-400 mt-0.5 font-medium">{clinic.regNo}</div>
-            <div className="text-[0.65rem] text-slate-400 mt-0.5">{clinic.address}</div>
           </div>
           <div className="text-[0.8rem] leading-relaxed text-slate-900 px-4">
             <div className="flex justify-between mb-1 gap-2 flex-wrap">
@@ -511,13 +527,31 @@ export default function PrescriptionsClientPage() {
               <span className="font-bold text-slate-500">Advice:</span> <span>{currentRx.notes}</span>
             </div>}
           </div>
-          <div className="absolute bottom-4 right-5 text-center">
-            <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-            <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
-          </div>
-          {/* <div className="absolute bottom-4 left-5 text-[0.6rem] text-slate-400 max-w-[140px] leading-snug">
-            This prescription is generated digitally via Prescribo. Valid for 30 days.
-          </div> */}
+          {templateStyle === 'header-footer' && (
+            <>
+              <div className="px-4 pb-2 flex justify-end">
+                <div className="text-center">
+                  <div className="font-[cursive] text-[0.9rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+                  <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
+                </div>
+              </div>
+              <div className="mt-auto pt-2 px-4 pb-4">
+                <div className="border-t border-gray-200 pt-2 text-center">
+                  <div className="inline-flex flex-col gap-0.5 text-[0.6rem] text-slate-500 leading-relaxed">
+                    {footerLines.map(line => (
+                      <div key={line.id}><span className="font-bold text-slate-700">{line.label}:</span> {line.value}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          {templateStyle === 'header-only' && (
+            <div className="absolute bottom-4 right-5 text-center">
+              <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+              <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2.5 mt-4 w-full max-w-[380px] mx-auto">

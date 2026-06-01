@@ -11,6 +11,7 @@ import { useFrequencyStore } from '@/stores/frequency-store'
 import { useDurationStore } from '@/stores/duration-store'
 import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
+import { usePrescriptionFooterStore } from '@/stores/prescription-footer-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,13 +32,14 @@ const tabs = [
   { id: 'master-data', label: 'Master Data', icon: ListChecks },
   { id: 'patient-history', label: 'Patient History', icon: UserRound },
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
+  { id: 'footer', label: 'Prescription Footer', icon: FileText },
   { id: 'backup', label: 'Backup & Sync', icon: Database },
   { id: 'license', label: 'License', icon: KeyRound },
 ]
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('clinic')
-  const { clinic, security, updateClinic, updateSecurity } = useSettingsStore()
+  const { clinic, security, templateStyle, updateClinic, updateSecurity } = useSettingsStore()
   const { licenseKey, demoMode } = useAuthStore()
   const { addToast } = useUIStore()
 
@@ -67,7 +69,8 @@ export default function SettingsPage() {
         {activeTab === 'medicine-history' && <MedicineHistoryTab />}
         {activeTab === 'master-data' && <MasterDataTab />}
         {activeTab === 'patient-history' && <PatientHistoryTab />}
-        {activeTab === 'templates' && <TemplatesTab addToast={addToast} />}
+        {activeTab === 'templates' && <TemplatesTab templateStyle={templateStyle} addToast={addToast} />}
+        {activeTab === 'footer' && <FooterTab addToast={addToast} />}
         {activeTab === 'backup' && <BackupTab addToast={addToast} />}
         {activeTab === 'license' && <LicenseTab licenseKey={licenseKey} demoMode={demoMode} addToast={addToast} />}
       </div>
@@ -507,14 +510,120 @@ function PatientHistoryTab() {
 }
 
 /* ===================== TEMPLATES TAB ===================== */
-function TemplatesTab({ addToast }: any) {
+function TemplatesTab({ templateStyle, addToast }: any) {
+  const { updateTemplateStyle } = useSettingsStore()
   return (
     <div className="bg-white border border-border rounded-xl p-5 shadow-sm max-w-[680px]">
       <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
-        <LayoutTemplate className="w-[18px] h-[18px]" /> Default Template Preferences
+        <LayoutTemplate className="w-[18px] h-[18px]" /> Prescription Template Design
       </h3>
-      <ToggleItem label="Auto-apply last template" desc="Automatically select the last used template" checked={false} onChange={() => {}} />
-      <ToggleItem label="Show generic names" desc="Display generic medicine names on prescriptions" checked={true} onChange={() => {}} />
+      <div className="flex flex-col gap-3 mb-5">
+        <label className="text-xs font-semibold text-slate-500">Select Template</label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => updateTemplateStyle('header-footer')}
+            className={cn(
+              'border rounded-lg p-4 text-left transition-all',
+              templateStyle === 'header-footer'
+                ? 'border-primary bg-primary-50 ring-1 ring-primary'
+                : 'border-border hover:border-primary-light'
+            )}
+          >
+            <div className="text-sm font-bold mb-1">Header + Footer</div>
+            <div className="text-xs text-slate-400">Doctor details in header, consultation/address/phone in footer</div>
+          </button>
+          <button
+            onClick={() => updateTemplateStyle('header-only')}
+            className={cn(
+              'border rounded-lg p-4 text-left transition-all',
+              templateStyle === 'header-only'
+                ? 'border-primary bg-primary-50 ring-1 ring-primary'
+                : 'border-border hover:border-primary-light'
+            )}
+          >
+            <div className="text-sm font-bold mb-1">Header Only</div>
+            <div className="text-xs text-slate-400">Doctor details in header, no footer section</div>
+          </button>
+        </div>
+      </div>
+      <Button onClick={() => addToast('Template preference saved', 'success')}>Save Changes</Button>
+    </div>
+  )
+}
+
+/* ===================== FOOTER TAB ===================== */
+function FooterTab({ addToast }: any) {
+  const { items, addItem, updateItem, deleteItem } = usePrescriptionFooterStore()
+  const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [label, setLabel] = useState('')
+  const [value, setValue] = useState('')
+
+  const openAdd = () => { setEditingId(null); setLabel(''); setValue(''); setShowModal(true) }
+  const openEdit = (id: number) => {
+    const item = items.find(x => x.id === id)
+    if (!item) return
+    setEditingId(id); setLabel(item.label); setValue(item.value); setShowModal(true)
+  }
+  const handleSave = () => {
+    if (!label.trim() || !value.trim()) { addToast('Please enter both label and value', 'error'); return }
+    if (editingId) {
+      updateItem(editingId, label, value)
+      addToast('Footer line updated', 'success')
+    } else {
+      addItem(label, value)
+      addToast('Footer line added', 'success')
+    }
+    setShowModal(false)
+  }
+  const handleDelete = (id: number) => { deleteItem(id); addToast('Footer line deleted', 'info') }
+
+  return (
+    <div className="max-w-[700px]">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><FileText className="w-[18px] h-[18px]" /> Prescription Footer</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Manage footer lines that appear on prescription printouts</p>
+        </div>
+        <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Line</Button>
+      </div>
+      <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+        <table className="w-full">
+          <thead><tr className="bg-bg">
+            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Label</th>
+            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Value</th>
+            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Actions</th>
+          </tr></thead>
+          <tbody>
+            {items.length > 0 ? items.map(item => (
+              <tr key={item.id} className="hover:bg-slate-50 transition-all">
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{item.label}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50 text-slate-600">{item.value}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50">
+                  <div className="flex gap-1">
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => openEdit(item.id)} title="Edit"><Pencil className="w-4 h-4" /></button>
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => handleDelete(item.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </tr>
+            )) : (
+              <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400">No footer lines found. Click "Add Line" to create one.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Edit Footer Line' : 'Add Footer Line'} footer={<><Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button><Button onClick={handleSave}>{editingId ? 'Update' : 'Save'}</Button></>}>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Label *</label>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Consultation" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Value *</label>
+            <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="e.g. Mon-Sat: 9:00 AM - 6:00 PM" />
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
