@@ -57,7 +57,7 @@ export default function HistoryPage() {
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.date}</td>
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{rx.patientName}</strong></td>
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.diagnosis}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.medicines.join(', ')}</td>
+                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.medicines.map(m => m.name).join(', ')}</td>
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.doctor}</td>
                   <td className="px-4 py-3.5 text-sm border-b border-slate-50">
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>

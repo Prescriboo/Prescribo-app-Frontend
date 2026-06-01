@@ -11,10 +11,12 @@ import { useDurationStore } from '@/stores/duration-store'
 import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
+import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { MultiAutocompleteInput } from '@/components/ui/multi-autocomplete-input'
+import { SingleAutocompleteInput } from '@/components/ui/single-autocomplete-input'
 import { RotateCcw, Save, Plus, Trash2, ArrowLeft, Printer, Pencil, Clock, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +30,7 @@ export default function PrescriptionsClientPage() {
   const { items: frequencies } = useFrequencyStore()
   const { items: durations } = useDurationStore()
   const { items: complaints } = useComplaintStore()
+  const { entries: medicineList } = useMedicineHistoryStore()
   const { items: diagnoses } = useDiagnosisStore()
   const { addToast } = useUIStore()
 
@@ -57,6 +60,22 @@ export default function PrescriptionsClientPage() {
     }
   }
 
+  const handleMedicineInstKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (rowIndex === currentRx.medicines.length - 1) {
+        addMedicineRow()
+        requestAnimationFrame(() => {
+          const nameInputs = document.querySelectorAll('[data-medicine-name]')
+          const last = nameInputs[nameInputs.length - 1] as HTMLElement | null
+          last?.focus()
+        })
+      } else {
+        focusNextField()
+      }
+    }
+  }
+
   // Handle view mode
   useEffect(() => {
     if (viewId) {
@@ -81,12 +100,12 @@ export default function PrescriptionsClientPage() {
         setCurrentRx({
           patientName: rx.patientName,
           patientAge: p ? `${p.age} / ${p.gender}` : '',
-          patientPhone: p ? p.phone : '',
+          patientPlace: '',
           date: new Date().toISOString().split('T')[0],
           complaint: '',
           diagnosis: rx.diagnosis,
           notes: '',
-          medicines: rx.medicines.map(m => ({ name: m, dose: '', freq: '', dur: '', inst: '' })),
+          medicines: rx.medicines.map(m => ({ ...m })),
         })
         addToast('Loaded prescription for update. Add new medicines below.', 'info')
       }
@@ -101,7 +120,7 @@ export default function PrescriptionsClientPage() {
         setCurrentRx({
           patientName: p.name,
           patientAge: `${p.age} / ${p.gender}`,
-          patientPhone: p.phone,
+          patientPlace: '',
         })
       }
     }
@@ -116,8 +135,7 @@ export default function PrescriptionsClientPage() {
     if (meds.length === 0) { addToast('Please add at least one medicine', 'error'); return }
 
     if (editingRxId) {
-      const newMedicines = meds.map(m => m.name)
-      updatePrescription(editingRxId, newMedicines, currentRx.date || new Date().toISOString().split('T')[0])
+      updatePrescription(editingRxId, meds, currentRx.date || new Date().toISOString().split('T')[0])
       addToast('Prescription updated with new medicines!', 'success')
       setTimeout(() => { resetCurrentRx(); router.push('/history') }, 500)
       return
@@ -125,7 +143,7 @@ export default function PrescriptionsClientPage() {
 
     let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
     if (!p) {
-      p = { id: patients.length + 1, name: currentRx.patientName, age: '-', gender: '-', phone: currentRx.patientPhone || '-', email: '', allergies: '', conditions: '', lastVisit: 'Just now', status: 'Active', visits: 0, rxCount: 0 }
+      p = { id: patients.length + 1, name: currentRx.patientName, age: '-', gender: '-', phone: '-', email: '', allergies: '', conditions: '', lastVisit: 'Just now', status: 'Active', visits: 0, rxCount: 0 }
     }
 
     addPrescription({
@@ -133,7 +151,7 @@ export default function PrescriptionsClientPage() {
       patientName: p.name,
       date: currentRx.date || new Date().toISOString().split('T')[0],
       diagnosis: currentRx.diagnosis || 'General',
-      medicines: meds.map(m => m.name),
+      medicines: meds,
       doctor: clinic.doctorName,
     })
 
@@ -225,16 +243,24 @@ export default function PrescriptionsClientPage() {
                 <span className="font-bold text-slate-500 text-[0.7rem]">Diagnosis:</span> <span className="font-medium">{viewRx.diagnosis}</span>
               </div>
 
-              {/* Medicines with Timeline */}
-              <div className="flex flex-col gap-2 mt-3">
+              {/* Medicines Table */}
+              <div className="mt-3">
+                <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
+                  <div>#</div>
+                  <div>Name</div>
+                  <div>Dosage</div>
+                  <div>Freq</div>
+                  <div>Dur</div>
+                  <div>Inst</div>
+                </div>
                 {viewRx.medicines.slice(0, originalCount).map((med, i) => (
-                  <div key={`orig-${i}`} className="flex gap-2 pb-2 border-b border-dashed border-gray-200">
-                    <div className="w-[20px] h-[20px] bg-primary text-white rounded-full flex items-center justify-center text-[0.7rem] font-extrabold flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-[0.8rem]">{med}</div>
-                    </div>
+                  <div key={`orig-${i}`} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
+                    <div className="font-extrabold text-slate-500">{i + 1}</div>
+                    <div className="font-semibold">{med.name}</div>
+                    <div>{med.dose || '-'}</div>
+                    <div>{med.freq || '-'}</div>
+                    <div>{med.dur || '-'}</div>
+                    <div className="italic text-slate-400">{med.inst || '-'}</div>
                   </div>
                 ))}
 
@@ -250,13 +276,13 @@ export default function PrescriptionsClientPage() {
                         </div>
                       </div>
                       {update.medicines.map((med, mi) => (
-                        <div key={`upd-${idx}-${mi}`} className="flex gap-2 pb-1.5 border-b border-dashed border-gray-200">
-                          <div className="w-[18px] h-[18px] bg-teal text-white rounded-full flex items-center justify-center text-[0.65rem] font-extrabold flex-shrink-0 mt-0.5">
-                            {startIndex + mi + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-[0.8rem]">{med}</div>
-                          </div>
+                        <div key={`upd-${idx}-${mi}`} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
+                          <div className="font-extrabold text-slate-500">{startIndex + mi + 1}</div>
+                          <div className="font-semibold">{med.name}</div>
+                          <div>{med.dose || '-'}</div>
+                          <div>{med.freq || '-'}</div>
+                          <div>{med.dur || '-'}</div>
+                          <div className="italic text-slate-400">{med.inst || '-'}</div>
                         </div>
                       ))}
                     </div>
@@ -305,12 +331,12 @@ export default function PrescriptionsClientPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5" data-enter-nav>
-              <label className="text-xs font-semibold text-slate-500">Phone</label>
-              <Input value={currentRx.patientPhone} onChange={e => setCurrentRx({ patientPhone: e.target.value })} onKeyDown={handleEnterKey} placeholder="+91 ..." readOnly={!!editingRxId} />
+              <label className="text-xs font-semibold text-slate-500">Place</label>
+              <Input value={currentRx.patientPlace} onChange={e => setCurrentRx({ patientPlace: e.target.value })} onKeyDown={handleEnterKey} placeholder="e.g. Bangalore" readOnly={!!editingRxId} />
             </div>
             <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Date</label>
-              <Input type="date" value={currentRx.date} onChange={e => setCurrentRx({ date: e.target.value })} onKeyDown={handleEnterKey} />
+              <Input type="date" value={currentRx.date} readOnly className="bg-slate-50 text-slate-500" />
             </div>
           </div>
         </Card>
@@ -351,13 +377,33 @@ export default function PrescriptionsClientPage() {
           </div>
           <div className="flex flex-col gap-2">
             {currentRx.medicines.map((med, i) => (
-              <div key={i} className="grid grid-cols-[2fr_1fr_1.5fr_1.5fr_1.5fr_2fr_36px] gap-1.5 items-center p-2.5 bg-bg rounded-md border border-border">
-                <Input className="px-2 py-1.5 text-sm" placeholder="Medicine name" value={med.name} onChange={e => updateMedicineRow(i, { name: e.target.value })} />
-                <Input className="px-2 py-1.5 text-sm" placeholder="Dose" value={med.dose} onChange={e => updateMedicineRow(i, { dose: e.target.value })} />
+              <div key={i} className="grid grid-cols-[2fr_1.5fr_1.5fr_1.5fr_2fr_36px] gap-1.5 items-center p-2.5 bg-bg rounded-md border border-border">
+                <SingleAutocompleteInput
+                  className="px-2 py-1.5 text-sm"
+                  placeholder="Medicine name"
+                  value={med.name}
+                  onChange={val => updateMedicineRow(i, { name: val })}
+                  options={medicineList.map(m => m.name)}
+                  onPressEnter={focusNextField}
+                  data-medicine-name
+                  data-enter-nav
+                />
+                <select
+                  className="px-2 py-1.5 border border-border rounded text-sm outline-none focus:border-primary bg-white min-w-0"
+                  value={med.dose}
+                  onChange={e => updateMedicineRow(i, { dose: e.target.value })}
+                  onKeyDown={handleEnterKey}
+                  data-enter-nav
+                >
+                  <option value="">Dosage</option>
+                  {dosages.map(d => <option key={d.id} value={d.dosage}>{d.dosage}</option>)}
+                </select>
                 <select
                   className="px-2 py-1.5 border border-border rounded text-sm outline-none focus:border-primary bg-white min-w-0"
                   value={med.freq}
                   onChange={e => updateMedicineRow(i, { freq: e.target.value })}
+                  onKeyDown={handleEnterKey}
+                  data-enter-nav
                 >
                   <option value="">Frequency</option>
                   {frequencies.map(f => <option key={f.id} value={f.frequency}>{f.frequency}</option>)}
@@ -366,19 +412,20 @@ export default function PrescriptionsClientPage() {
                   className="px-2 py-1.5 border border-border rounded text-sm outline-none focus:border-primary bg-white min-w-0"
                   value={med.dur}
                   onChange={e => updateMedicineRow(i, { dur: e.target.value })}
+                  onKeyDown={handleEnterKey}
+                  data-enter-nav
                 >
                   <option value="">Duration</option>
                   {durations.map(d => <option key={d.id} value={d.duration}>{d.duration}</option>)}
                 </select>
-                <select
-                  className="px-2 py-1.5 border border-border rounded text-sm outline-none focus:border-primary bg-white min-w-0"
-                  value={med.dose}
-                  onChange={e => updateMedicineRow(i, { dose: e.target.value })}
-                >
-                  <option value="">Dosage</option>
-                  {dosages.map(d => <option key={d.id} value={d.dosage}>{d.dosage}</option>)}
-                </select>
-                <Input className="px-2 py-1.5 text-sm" placeholder="Instructions" value={med.inst} onChange={e => updateMedicineRow(i, { inst: e.target.value })} />
+                <Input
+                  className="px-2 py-1.5 text-sm"
+                  placeholder="Instructions"
+                  value={med.inst}
+                  onChange={e => updateMedicineRow(i, { inst: e.target.value })}
+                  onKeyDown={e => handleMedicineInstKeyDown(e, i)}
+                  data-enter-nav
+                />
                 <button className="w-7 h-7 rounded bg-danger-50 text-danger flex items-center justify-center text-base hover:bg-danger hover:text-white transition-all" onClick={() => removeMedicineRow(i)}><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
@@ -414,7 +461,7 @@ export default function PrescriptionsClientPage() {
         </div>
 
         <div className={cn(
-          "bg-white border border-gray-300 rounded shadow-xl relative flex-shrink-0 overflow-hidden",
+          "bg-white border border-gray-300 rounded shadow-xl relative",
           paperSize === 'A4' ? 'w-[380px] min-h-[537px]' : 'w-[380px] min-h-[380px]'
         )}>
           <div className="paper-watermark">PRESCRIBO</div>
@@ -432,29 +479,37 @@ export default function PrescriptionsClientPage() {
             </div>
             <div className="flex justify-between mb-1 gap-2 flex-wrap">
               <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age/Sex:</span> <span className="font-medium">{currentRx.patientAge || '-'}</span></div>
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Phone:</span> <span className="font-medium">{currentRx.patientPhone || '-'}</span></div>
+              {currentRx.patientPlace && <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{currentRx.patientPlace}</span></div>}
             </div>
             <div className="my-2 py-1 border-t border-b border-gray-200">
               <span className="font-bold text-slate-500 text-[0.7rem]">Complaint:</span> <span>{currentRx.complaint || '-'}</span><br/>
               <span className="font-bold text-slate-500 text-[0.7rem]">Diagnosis:</span> <span>{currentRx.diagnosis || '-'}</span>
             </div>
 
-            <div className="flex flex-col gap-1.5 mt-2">
+            <div className="mt-3">
+              <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
+                <div>#</div>
+                <div>Name</div>
+                <div>Dosage</div>
+                <div>Freq</div>
+                <div>Dur</div>
+                <div>Inst</div>
+              </div>
               {currentRx.medicines.filter(m => m.name).map((med, i) => (
-                <div key={i} className="flex gap-2 pb-1.5 border-b border-dashed border-gray-200">
-                  <div className="w-[18px] h-[18px] bg-primary text-white rounded-full flex items-center justify-center text-[0.65rem] font-extrabold flex-shrink-0 mt-0.5">{i + 1}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[0.8rem]">{med.name} {med.dose ? `(${med.dose})` : ''}</div>
-                    <div className="text-[0.7rem] text-slate-500">{med.freq} {med.dur ? ` for ${med.dur}` : ''}</div>
-                    {med.inst && <div className="text-[0.7rem] text-slate-400 italic mt-0.5">{med.inst}</div>}
-                  </div>
+                <div key={i} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
+                  <div className="font-extrabold text-slate-500">{i + 1}</div>
+                  <div className="font-semibold">{med.name}</div>
+                  <div>{med.dose || '-'}</div>
+                  <div>{med.freq || '-'}</div>
+                  <div>{med.dur || '-'}</div>
+                  <div className="italic text-slate-400">{med.inst || '-'}</div>
                 </div>
               ))}
               {currentRx.medicines.filter(m => m.name).length === 0 && <div className="text-slate-400 text-[0.75rem] py-3">No medicines added yet</div>}
             </div>
-            <div className="mt-2 text-[0.75rem]">
-              <span className="font-bold text-slate-500">Advice:</span> <span>{currentRx.notes || '-'}</span>
-            </div>
+            {currentRx.notes && <div className="mt-2 text-[0.75rem]">
+              <span className="font-bold text-slate-500">Advice:</span> <span>{currentRx.notes}</span>
+            </div>}
           </div>
           <div className="absolute bottom-4 right-5 text-center">
             <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>

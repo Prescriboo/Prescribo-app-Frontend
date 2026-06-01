@@ -74,8 +74,8 @@ export default function PatientDetailPage() {
           {prescriptions.length > 0 ? prescriptions.map(rx => (
             <div key={rx.id} className="timeline-item relative mb-5 bg-white border border-border rounded-lg p-4 hover:border-primary-light hover:shadow-sm transition-all cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
               <div className="text-xs text-slate-400 font-bold mb-1 tracking-wide">{rx.date}</div>
-              <div><h4 className="text-sm font-bold mb-0.5">{rx.diagnosis}</h4><p className="text-xs text-slate-500">{rx.medicines.join(', ')}</p></div>
-              <div className="flex flex-wrap gap-1.5 mt-2">{rx.medicines.map(m => <Badge key={m} variant="default">{m}</Badge>)}</div>
+              <div><h4 className="text-sm font-bold mb-0.5">{rx.diagnosis}</h4><p className="text-xs text-slate-500">{rx.medicines.map(m => m.name).join(', ')}</p></div>
+              <div className="flex flex-wrap gap-1.5 mt-2">{rx.medicines.map(m => <Badge key={m.name} variant="default">{m.name}</Badge>)}</div>
             </div>
           )) : <p className="text-slate-400 text-sm">No prescription history yet.</p>}
         </div>

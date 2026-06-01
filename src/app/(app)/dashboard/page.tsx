@@ -52,7 +52,7 @@ export default function DashboardPage() {
               >
                 <div>
                   <h4 className="text-sm font-semibold text-slate-900">{rx.patientName}</h4>
-                  <p className="text-xs text-slate-400">{rx.medicines.slice(0, 2).join(' + ')}</p>
+                  <p className="text-xs text-slate-400">{rx.medicines.slice(0, 2).map(m => m.name).join(' + ')}</p>
                 </div>
                 <span className="text-xs text-slate-500 font-medium flex-shrink-0 ml-4">{rx.date}</span>
               </div>

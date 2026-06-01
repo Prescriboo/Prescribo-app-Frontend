@@ -4,9 +4,9 @@ export interface Prescription {
   patientName: string
   date: string
   diagnosis: string
-  medicines: string[]
+  medicines: MedicineRow[]
   doctor: string
-  updateHistory?: { date: string; medicines: string[] }[]
+  updateHistory?: { date: string; medicines: MedicineRow[] }[]
 }
 
 export interface MedicineRow {

@@ -9,7 +9,7 @@ interface PrescriptionState {
   currentRx: {
     patientName: string
     patientAge: string
-    patientPhone: string
+    patientPlace: string
     date: string
     complaint: string
     diagnosis: string
@@ -19,7 +19,7 @@ interface PrescriptionState {
   editingRxId: number | null
   paperSize: 'A4' | 'A5'
   addPrescription: (rx: Omit<Prescription, 'id' | 'updateHistory'>) => Prescription
-  updatePrescription: (id: number, newMedicines: string[], newDate: string) => void
+  updatePrescription: (id: number, newMedicines: MedicineRow[], newDate: string) => void
   getPatientPrescriptions: (patientId: number) => Prescription[]
   setCurrentRx: (data: Partial<PrescriptionState['currentRx']>) => void
   resetCurrentRx: () => void
@@ -33,7 +33,7 @@ interface PrescriptionState {
 const defaultRx = {
   patientName: '',
   patientAge: '',
-  patientPhone: '',
+  patientPlace: '',
   date: new Date().toISOString().split('T')[0],
   complaint: '',
   diagnosis: '',
@@ -79,7 +79,7 @@ export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
   setCurrentRx: (data) =>
     set((state) => ({ currentRx: { ...state.currentRx, ...data } })),
 
-  resetCurrentRx: () => set({ currentRx: { ...defaultRx }, editingRxId: null }),
+  resetCurrentRx: () => set({ currentRx: { ...defaultRx, date: new Date().toISOString().split('T')[0] }, editingRxId: null }),
 
   setEditingRxId: (id) => set({ editingRxId: id }),
 

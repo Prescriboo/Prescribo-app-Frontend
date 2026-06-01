@@ -24,7 +24,7 @@ export function TopBar() {
     ? prescriptions.filter(r =>
         r.patientName.toLowerCase().includes(search.toLowerCase()) ||
         r.diagnosis.toLowerCase().includes(search.toLowerCase()) ||
-        r.medicines.some(m => m.toLowerCase().includes(search.toLowerCase()))
+        r.medicines.some(m => m.name.toLowerCase().includes(search.toLowerCase()))
       ).slice(0, 4)
     : []
 
