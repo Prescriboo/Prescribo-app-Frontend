@@ -295,9 +295,9 @@ export default function PrescriptionsClientPage() {
               <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
               <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
             </div>
-            <div className="absolute bottom-6 left-8 text-[0.6rem] text-slate-400 max-w-[180px] leading-snug">
+            {/* <div className="absolute bottom-6 left-8 text-[0.6rem] text-slate-400 max-w-[180px] leading-snug">
               This prescription is generated digitally via Prescribo. Valid for 30 days.
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -436,8 +436,8 @@ export default function PrescriptionsClientPage() {
         </div>
       </div>
 
-      <div className="w-[420px] bg-white border-l border-border p-5 overflow-y-auto flex flex-col items-center flex-shrink-0">
-        <div className="flex items-center justify-between w-full max-w-[380px] mb-3">
+      <div className="w-[420px] bg-white border-l border-border p-5 overflow-y-auto flex-shrink-0">
+        <div className="flex items-center justify-between w-full max-w-[380px] mb-3 mx-auto">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             {editingRxId ? 'Update Preview' : 'Live Preview'}
           </span>
@@ -461,7 +461,7 @@ export default function PrescriptionsClientPage() {
         </div>
 
         <div className={cn(
-          "bg-white border border-gray-300 rounded shadow-xl relative",
+          "bg-white border border-gray-300 rounded shadow-xl relative flex-shrink-0 mx-auto",
           paperSize === 'A4' ? 'w-[380px] min-h-[537px]' : 'w-[380px] min-h-[380px]'
         )}>
           <div className="paper-watermark">PRESCRIBO</div>
@@ -515,12 +515,12 @@ export default function PrescriptionsClientPage() {
             <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
             <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
           </div>
-          <div className="absolute bottom-4 left-5 text-[0.6rem] text-slate-400 max-w-[140px] leading-snug">
+          {/* <div className="absolute bottom-4 left-5 text-[0.6rem] text-slate-400 max-w-[140px] leading-snug">
             This prescription is generated digitally via Prescribo. Valid for 30 days.
-          </div>
+          </div> */}
         </div>
 
-        <div className="flex gap-2.5 mt-4 w-full max-w-[380px]">
+        <div className="flex gap-2.5 mt-4 w-full max-w-[380px] mx-auto">
           <Button variant="outline" className="flex-1" onClick={() => { resetCurrentRx(); addToast('Form reset', 'info') }}>
             <RotateCcw className="w-4 h-4" /> Reset
           </Button>
