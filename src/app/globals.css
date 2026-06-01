@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-bg text-slate-900 font-sans;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Pin dots */
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid #e2e8f0; transition: all 0.25s; background: white; }
+.pin-dot.filled { background: #1d4ed8; border-color: #1d4ed8; transform: scale(1.15); }
+
+/* Toggle switch */
+.toggle { width: 44px; height: 24px; background: #e2e8f0; border-radius: 12px; position: relative; cursor: pointer; transition: all 0.25s; border: none; appearance: none; }
+.toggle.active { background: #22c55e; }
+.toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: all 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.toggle.active::after { left: 22px; }
+
+/* Paper preview */
+.paper-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); font-size: 2.8rem; font-weight: 900; color: rgba(29,78,216,0.035); pointer-events: none; white-space: nowrap; user-select: none; letter-spacing: 4px; }
+
+/* Timeline */
+.timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; border-radius: 1px; }
+.timeline-item::before { content: ''; position: absolute; left: -1.35rem; top: 1.25rem; width: 10px; height: 10px; border-radius: 50%; background: #1d4ed8; border: 2px solid white; box-shadow: 0 0 0 2px #dbeafe; }
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-in {
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-in-from-right {
+  --tw-enter-translate-x: 100%;
+}
+
+
+/* ===================== ELECTRON STYLES ===================== */
+
+/* Prevent text selection on UI chrome */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth window transitions */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for Electron */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Titlebar drag region */
+[data-webkit-app-region="drag"] {
+  -webkit-app-region: drag;
+}
+[data-webkit-app-region="no-drag"] {
+  -webkit-app-region: no-drag;
+}
+
+/* Window controls hover */
+.window-control {
+  transition: background-color 0.15s ease;
+}
+.window-control:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+.window-control-close:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Rounded window corners for frameless */
+.electron-frameless {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Loading state */
+.electron-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Focus rings for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+/* Prevent default browser context menu on UI chrome */
+.titlebar,
+.sidebar,
+.topbar {
+  -webkit-context-menu: none;
+}

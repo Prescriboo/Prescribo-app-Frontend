@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <rect x="5" y="15" width="40" height="40" rx="8" fill="url(#g1)"/>
+  <path d="M15 25h20M15 35h20M15 45h12" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <text x="55" y="42" font-size="28" font-weight="800" fill="#1e3a8a">Prescribo</text>
+  <defs>
+    <linearGradient id="g1" x1="5" y1="15" x2="45" y2="55">
+      <stop stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+</svg>
