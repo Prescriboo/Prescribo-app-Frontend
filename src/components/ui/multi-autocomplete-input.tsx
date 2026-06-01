@@ -11,6 +11,7 @@ interface MultiAutocompleteInputProps {
   placeholder?: string
   readOnly?: boolean
   className?: string
+  onPressEnter?: () => void
 }
 
 export function MultiAutocompleteInput({
@@ -20,6 +21,7 @@ export function MultiAutocompleteInput({
   placeholder,
   readOnly,
   className,
+  onPressEnter,
 }: MultiAutocompleteInputProps) {
   const [open, setOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(0)
@@ -83,18 +85,22 @@ export function MultiAutocompleteInput({
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!open || filtered.length === 0) {
+    if (!open || filtered.length === 0 || lastToken.length === 0) {
       if (e.key === 'Enter') {
         e.preventDefault()
-        const trimmed = value.trimEnd()
-        if (trimmed && !trimmed.endsWith(',')) {
-          const newValue = trimmed + ', '
-          onChange(newValue)
-          requestAnimationFrame(() => {
-            inputRef.current?.focus()
-            const len = inputRef.current?.value.length || 0
-            inputRef.current?.setSelectionRange(len, len)
-          })
+        if (onPressEnter) {
+          onPressEnter()
+        } else {
+          const trimmed = value.trimEnd()
+          if (trimmed && !trimmed.endsWith(',')) {
+            const newValue = trimmed + ', '
+            onChange(newValue)
+            requestAnimationFrame(() => {
+              inputRef.current?.focus()
+              const len = inputRef.current?.value.length || 0
+              inputRef.current?.setSelectionRange(len, len)
+            })
+          }
         }
       }
       return

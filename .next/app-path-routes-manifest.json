@@ -2,11 +2,11 @@
   "/_not-found/page": "/_not-found",
   "/page": "/",
   "/(app)/dashboard/page": "/dashboard",
-  "/(app)/prescriptions/page": "/prescriptions",
-  "/(app)/templates/page": "/templates",
   "/(app)/patients/page": "/patients",
   "/(app)/history/page": "/history",
+  "/(app)/prescriptions/page": "/prescriptions",
   "/(app)/settings/page": "/settings",
+  "/(app)/templates/page": "/templates",
   "/(auth)/activate/page": "/activate",
   "/(auth)/pin/page": "/pin",
   "/(app)/patients/[id]/page": "/patients/[id]"

@@ -39,6 +39,24 @@ export default function PrescriptionsClientPage() {
   const [viewMode, setViewMode] = useState(false)
   const [viewRx, setViewRx] = useState<typeof prescriptions[0] | null>(null)
 
+  const focusNextField = () => {
+    const fields = Array.from(document.querySelectorAll('[data-enter-nav]')) as HTMLElement[]
+    const active = document.activeElement
+    const currentIndex = fields.findIndex(f => f === active || f.contains(active))
+    const next = fields[currentIndex + 1]
+    if (next) {
+      const inner = next.querySelector('input, textarea, select') as HTMLElement | null
+      ;(inner || next)?.focus()
+    }
+  }
+
+  const handleEnterKey = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      focusNextField()
+    }
+  }
+
   // Handle view mode
   useEffect(() => {
     if (viewId) {
@@ -273,42 +291,43 @@ export default function PrescriptionsClientPage() {
 
         <Card title="Patient Information" icon={<UserIcon />}>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Patient Name</label>
-              <Input list="patient-list" value={currentRx.patientName} onChange={e => setCurrentRx({ patientName: e.target.value })} placeholder="Search or enter name" readOnly={!!editingRxId} />
+              <Input list="patient-list" value={currentRx.patientName} onChange={e => setCurrentRx({ patientName: e.target.value })} onKeyDown={handleEnterKey} placeholder="Search or enter name" readOnly={!!editingRxId} />
               <datalist id="patient-list">
                 {patients.map(p => <option key={p.id} value={p.name} />)}
               </datalist>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Age / Gender</label>
-              <Input value={currentRx.patientAge} onChange={e => setCurrentRx({ patientAge: e.target.value })} placeholder="e.g. 45 / Male" readOnly={!!editingRxId} />
+              <Input value={currentRx.patientAge} onChange={e => setCurrentRx({ patientAge: e.target.value })} onKeyDown={handleEnterKey} placeholder="e.g. 45 / Male" readOnly={!!editingRxId} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Phone</label>
-              <Input value={currentRx.patientPhone} onChange={e => setCurrentRx({ patientPhone: e.target.value })} placeholder="+91 ..." readOnly={!!editingRxId} />
+              <Input value={currentRx.patientPhone} onChange={e => setCurrentRx({ patientPhone: e.target.value })} onKeyDown={handleEnterKey} placeholder="+91 ..." readOnly={!!editingRxId} />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Date</label>
-              <Input type="date" value={currentRx.date} onChange={e => setCurrentRx({ date: e.target.value })} />
+              <Input type="date" value={currentRx.date} onChange={e => setCurrentRx({ date: e.target.value })} onKeyDown={handleEnterKey} />
             </div>
           </div>
         </Card>
 
         <Card title="Clinical Details" icon={<FileTextIcon />}>
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Chief Complaint</label>
               <MultiAutocompleteInput
                 value={currentRx.complaint}
                 onChange={val => setCurrentRx({ complaint: val })}
                 options={complaints.map(c => c.complaint)}
                 placeholder="e.g. Fever, cough since 3 days"
+                onPressEnter={focusNextField}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Diagnosis</label>
               <MultiAutocompleteInput
                 value={currentRx.diagnosis}
@@ -316,11 +335,12 @@ export default function PrescriptionsClientPage() {
                 options={diagnoses.map(d => d.diagnosis)}
                 placeholder="e.g. Upper Respiratory Tract Infection"
                 readOnly={!!editingRxId}
+                onPressEnter={focusNextField}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Notes / Advice</label>
-              <Textarea value={currentRx.notes} onChange={e => setCurrentRx({ notes: e.target.value })} placeholder="Diet advice, follow up, etc." />
+              <Textarea value={currentRx.notes} onChange={e => setCurrentRx({ notes: e.target.value })} onKeyDown={handleEnterKey} placeholder="Diet advice, follow up, etc." />
             </div>
           </div>
         </Card>
