@@ -35,7 +35,7 @@ export default function PatientDetailPage() {
           {getInitials(patient.name)}
         </div>
         <div className="text-lg font-bold mb-1">{patient.name}</div>
-        <div className="text-sm text-slate-400 leading-relaxed mb-5">{patient.age} yrs {patient.gender}<br/>{patient.place}</div>
+        <div className="text-sm text-slate-400 leading-relaxed mb-5">{patient.age} yrs<br/>{patient.gender}<br/>{patient.place}</div>
         <div className="grid grid-cols-2 gap-3 w-full mb-5">
           <div className="bg-bg p-3.5 rounded-lg border border-border">
             <div className="text-2xl font-extrabold text-primary">{patient.visits}</div>

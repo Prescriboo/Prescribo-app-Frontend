@@ -10,6 +10,7 @@ interface PrescriptionState {
   currentRx: {
     patientName: string
     patientAge: string
+    patientGender: string
     patientPlace: string
     date: string
     complaint: string
@@ -57,6 +58,7 @@ function mapApiPrescription(r: any): Prescription {
 const defaultRx = {
   patientName: '',
   patientAge: '',
+  patientGender: '',
   patientPlace: '',
   date: new Date().toISOString().split('T')[0],
   complaint: '',

@@ -105,7 +105,8 @@ export default function PrescriptionsClientPage() {
         previousMedicinesRef.current = latestMedicines.map(m => ({ ...m }))
         setCurrentRx({
           patientName: rx.patientName,
-          patientAge: p ? `${p.age} / ${p.gender}` : '',
+          patientAge: p ? String(p.age) : '',
+          patientGender: p?.gender || '',
           patientPlace: p?.place || '',
           date: new Date().toISOString().split('T')[0],
           complaint: '',
@@ -125,7 +126,8 @@ export default function PrescriptionsClientPage() {
       if (p) {
         setCurrentRx({
           patientName: p.name,
-          patientAge: `${p.age} / ${p.gender}`,
+          patientAge: String(p.age),
+          patientGender: p.gender,
           patientPlace: p.place,
         })
       }
@@ -157,11 +159,10 @@ export default function PrescriptionsClientPage() {
 
     let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
     if (!p) {
-      const ageParts = currentRx.patientAge.split('/').map(s => s.trim())
       p = await addPatient({
         name: currentRx.patientName,
-        age: ageParts[0] || '-',
-        gender: ageParts[1] || '-',
+        age: currentRx.patientAge || '-',
+        gender: currentRx.patientGender || '-',
         place: currentRx.patientPlace || '-',
         email: '',
         allergies: '',
@@ -259,10 +260,11 @@ export default function PrescriptionsClientPage() {
                 <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Date:</span> <span className="font-medium">{viewRx.date}</span></div>
               </div>
               <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age / Gender:</span> <span className="font-medium">{viewPatient ? `${viewPatient.age} / ${viewPatient.gender}` : '-'}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{viewPatient?.place || '-'}</span></div>
+                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age:</span> <span className="font-medium">{viewPatient?.age ?? '-'}</span></div>
+                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Sex:</span> <span className="font-medium">{viewPatient?.gender ?? '-'}</span></div>
               </div>
               <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
+                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{viewPatient?.place ?? '-'}</span></div>
                 <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Doctor:</span> <span className="font-medium">{viewRx.doctor}</span></div>
               </div>
               <div className="my-2 py-1.5 border-t border-b border-gray-200">
@@ -360,7 +362,7 @@ export default function PrescriptionsClientPage() {
         )}
 
         <Card title="Patient Information" icon={<UserIcon />}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Patient Name</label>
               <Input list="patient-list" value={currentRx.patientName} onChange={e => setCurrentRx({ patientName: e.target.value })} onKeyDown={handleEnterKey} placeholder="Search or enter name" readOnly={!!editingRxId} />
@@ -369,8 +371,17 @@ export default function PrescriptionsClientPage() {
               </datalist>
             </div>
             <div className="flex flex-col gap-1.5" data-enter-nav>
-              <label className="text-xs font-semibold text-slate-500">Age / Gender</label>
-              <Input value={currentRx.patientAge} onChange={e => setCurrentRx({ patientAge: e.target.value })} onKeyDown={handleEnterKey} placeholder="e.g. 45 / Male" readOnly={!!editingRxId} />
+              <label className="text-xs font-semibold text-slate-500">Age</label>
+              <Input type="text" value={currentRx.patientAge} onChange={e => setCurrentRx({ patientAge: e.target.value })} onKeyDown={handleEnterKey} placeholder="e.g. 45" readOnly={!!editingRxId} />
+            </div>
+            <div className="flex flex-col gap-1.5" data-enter-nav>
+              <label className="text-xs font-semibold text-slate-500">Sex</label>
+              <select value={currentRx.patientGender} onChange={e => setCurrentRx({ patientGender: e.target.value })} onKeyDown={handleEnterKey} disabled={!!editingRxId} className="flex w-full rounded-md border border-border bg-white px-3.5 py-2.5 text-sm shadow-sm focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary-100 disabled:bg-slate-50 disabled:text-slate-500">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -520,7 +531,10 @@ export default function PrescriptionsClientPage() {
               <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Date:</span> <span className="font-medium">{currentRx.date || '-'}</span></div>
             </div>
             <div className="flex justify-between mb-1 gap-2 flex-wrap">
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age/Sex:</span> <span className="font-medium">{currentRx.patientAge || '-'}</span></div>
+              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age:</span> <span className="font-medium">{currentRx.patientAge || '-'}</span></div>
+              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Sex:</span> <span className="font-medium">{currentRx.patientGender || '-'}</span></div>
+            </div>
+            <div className="flex justify-between mb-1 gap-2 flex-wrap">
               {currentRx.patientPlace && <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{currentRx.patientPlace}</span></div>}
             </div>
             <div className="my-2 py-1 border-t border-b border-gray-200">

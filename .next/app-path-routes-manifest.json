@@ -1,13 +1,13 @@
 {
   "/_not-found/page": "/_not-found",
   "/page": "/",
-  "/(app)/settings/page": "/settings",
   "/(app)/dashboard/page": "/dashboard",
-  "/(app)/patients/page": "/patients",
   "/(app)/history/page": "/history",
+  "/(app)/patients/page": "/patients",
+  "/(app)/settings/page": "/settings",
   "/(app)/prescriptions/page": "/prescriptions",
+  "/(app)/templates/page": "/templates",
   "/(auth)/activate/page": "/activate",
   "/(auth)/pin/page": "/pin",
-  "/(app)/templates/page": "/templates",
   "/(app)/patients/[id]/page": "/patients/[id]"
 }

@@ -77,7 +77,8 @@ export default function PatientsPage() {
             <thead>
               <tr className="bg-bg">
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Patient</th>
-                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Age / Gender</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Age</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Gender</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Place</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Last Visit</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Status</th>
@@ -86,12 +87,13 @@ export default function PatientsPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">No patients found. Click "Add Patient" to create one.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-400">No patients found. Click "Add Patient" to create one.</td></tr>
               ) : (
                 filtered.map(p => (
                   <tr key={p.id} className="hover:bg-slate-50 transition-all">
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{p.name}</strong></td>
-                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.age} / {p.gender}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.age}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.gender}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.place}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.lastVisit}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import { Download, Eye, RotateCcw, Search, Trash2 } from 'lucide-react'
 export default function HistoryPage() {
   const router = useRouter()
   const { prescriptions, deletePrescription } = usePrescriptionStore()
+  const { getPatient } = usePatientStore()
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -47,6 +49,9 @@ export default function HistoryPage() {
               <tr className="bg-bg">
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Date</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Patient</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Age</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Gender</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Place</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Diagnosis</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Medicines</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Doctor</th>
@@ -55,12 +60,17 @@ export default function HistoryPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">No prescriptions found. Create a new prescription to see it here.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-sm text-slate-400">No prescriptions found. Create a new prescription to see it here.</td></tr>
               ) : (
-                filtered.map(rx => (
+                filtered.map(rx => {
+                  const p = getPatient(rx.patientId)
+                  return (
                   <tr key={rx.id} className="hover:bg-slate-50 transition-all cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.date}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{rx.patientName}</strong></td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p?.age ?? '-'}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p?.gender ?? '-'}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p?.place ?? '-'}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.diagnosis}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.medicines.map(m => m.name).join(', ')}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.doctor}</td>
@@ -78,7 +88,8 @@ export default function HistoryPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>
