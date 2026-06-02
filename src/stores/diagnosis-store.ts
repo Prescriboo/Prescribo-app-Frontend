@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Diagnosis } from '@/types'
 import { autocompleteApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface DiagnosisState {
   syncFromApi: (apiItems: { id: number; diagnosis: string }[]) => void
 }
 
-export const useDiagnosisStore = create<DiagnosisState>()(
-  persist(
-    (set, get) => ({
+export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
       items: [],
       _apiAvailable: false,
 
@@ -68,9 +65,4 @@ export const useDiagnosisStore = create<DiagnosisState>()(
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((d) => ({ id: d.id, diagnosis: d.diagnosis })) })
       },
-    }),
-    {
-      name: 'prescribo-diagnosis-master',
-    }
-  )
-)
+    }))

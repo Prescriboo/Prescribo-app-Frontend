@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { MedicineHistoryEntry } from '@/types'
 import { autocompleteApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface MedicineHistoryState {
   syncFromApi: (apiItems: { id: number; medicine_name: string }[]) => void
 }
 
-export const useMedicineHistoryStore = create<MedicineHistoryState>()(
-  persist(
-    (set, get) => ({
+export const useMedicineHistoryStore = create<MedicineHistoryState>((set, get) => ({
       entries: [],
       _apiAvailable: false,
 
@@ -80,9 +77,4 @@ export const useMedicineHistoryStore = create<MedicineHistoryState>()(
           })),
         })
       },
-    }),
-    {
-      name: 'prescribo-medicine-list',
-    }
-  )
-)
+    }))

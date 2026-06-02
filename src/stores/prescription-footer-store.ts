@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { PrescriptionFooterLine } from '@/types'
 
 interface PrescriptionFooterState {
@@ -11,9 +10,7 @@ interface PrescriptionFooterState {
   deleteItem: (id: number) => void
 }
 
-export const usePrescriptionFooterStore = create<PrescriptionFooterState>()(
-  persist(
-    (set, get) => ({
+export const usePrescriptionFooterStore = create<PrescriptionFooterState>((set, get) => ({
       items: [],
 
       addItem: (label, value) => {
@@ -40,9 +37,4 @@ export const usePrescriptionFooterStore = create<PrescriptionFooterState>()(
           items: state.items.filter((item) => item.id !== id),
         }))
       },
-    }),
-    {
-      name: 'prescribo-prescription-footer',
-    }
-  )
-)
+    }))

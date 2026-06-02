@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Dosage } from '@/types'
 import { mastersApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface DosageState {
   syncFromApi: (apiItems: { id: number; dosage: string }[]) => void
 }
 
-export const useDosageStore = create<DosageState>()(
-  persist(
-    (set, get) => ({
+export const useDosageStore = create<DosageState>((set, get) => ({
       items: [],
       _apiAvailable: false,
 
@@ -86,9 +83,4 @@ export const useDosageStore = create<DosageState>()(
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((d) => ({ id: d.id, dosage: d.dosage })) })
       },
-    }),
-    {
-      name: 'prescribo-dosage-master',
-    }
-  )
-)
+    }))

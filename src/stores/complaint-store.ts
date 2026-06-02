@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Complaint } from '@/types'
 import { autocompleteApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface ComplaintState {
   syncFromApi: (apiItems: { id: number; chief_complaints: string }[]) => void
 }
 
-export const useComplaintStore = create<ComplaintState>()(
-  persist(
-    (set, get) => ({
+export const useComplaintStore = create<ComplaintState>((set, get) => ({
       items: [],
       _apiAvailable: false,
 
@@ -68,9 +65,4 @@ export const useComplaintStore = create<ComplaintState>()(
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((c) => ({ id: c.id, complaint: c.chief_complaints })) })
       },
-    }),
-    {
-      name: 'prescribo-complaint-master',
-    }
-  )
-)
+    }))

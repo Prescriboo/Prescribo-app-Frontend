@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Prescription, MedicineRow } from '@/types'
 import { prescriptionsApi } from '@/lib/api'
 
@@ -67,9 +66,7 @@ const defaultRx = {
   medicines: [{ name: '', dose: '', freq: '', dur: '', inst: '' }],
 }
 
-export const usePrescriptionStore = create<PrescriptionState>()(
-  persist(
-    (set, get) => ({
+export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
       prescriptions: [],
       currentRx: { ...defaultRx },
       editingRxId: null,
@@ -209,13 +206,4 @@ export const usePrescriptionStore = create<PrescriptionState>()(
       syncFromApi: (apiRx) => {
         set({ prescriptions: (apiRx || []).map(mapApiPrescription) })
       },
-    }),
-    {
-      name: 'prescribo-prescriptions',
-      partialize: (state) => ({
-        prescriptions: state.prescriptions,
-        paperSize: state.paperSize,
-      } as any),
-    }
-  )
-)
+    }))

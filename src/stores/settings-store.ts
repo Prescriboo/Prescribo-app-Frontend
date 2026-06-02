@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { AppSettings } from '@/types'
 import { settingsApi } from '@/lib/api'
 
@@ -43,9 +42,7 @@ interface SettingsState extends AppSettings {
   syncFromApi: (doctorProfile: any, appSettings?: any[]) => void
 }
 
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set, get) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...defaultSettings,
       _apiAvailable: false,
 
@@ -72,6 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
               phone: updated.phone,
               email: updated.email,
               website: updated.website,
+              signature_text: updated.signature,
               default_language: updated.defaultLanguage,
             })
           } catch (e: any) {
@@ -134,7 +132,7 @@ export const useSettingsStore = create<SettingsState>()(
             phone: doctorProfile.phone || get().clinic.phone,
             email: doctorProfile.email || get().clinic.email,
             website: doctorProfile.website || get().clinic.website,
-            signature: doctorProfile.full_name || get().clinic.signature,
+            signature: doctorProfile.signature_text ?? get().clinic.signature,
             defaultLanguage: doctorProfile.default_language || get().clinic.defaultLanguage,
           }
         }
@@ -148,9 +146,4 @@ export const useSettingsStore = create<SettingsState>()(
           set(updates)
         }
       },
-    }),
-    {
-      name: 'prescribo-settings',
-    }
-  )
-)
+    }))

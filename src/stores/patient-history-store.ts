@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { PatientHistoryEntry } from '@/types'
 
 interface PatientHistoryState {
@@ -12,9 +11,7 @@ interface PatientHistoryState {
   searchEntries: (query: string) => PatientHistoryEntry[]
 }
 
-export const usePatientHistoryStore = create<PatientHistoryState>()(
-  persist(
-    (set, get) => ({
+export const usePatientHistoryStore = create<PatientHistoryState>((set, get) => ({
       entries: [],
 
       addEntry: (entryData) => {
@@ -47,9 +44,4 @@ export const usePatientHistoryStore = create<PatientHistoryState>()(
             e.diagnosis.toLowerCase().includes(term)
         )
       },
-    }),
-    {
-      name: 'prescribo-patient-history',
-    }
-  )
-)
+    }))

@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { DosageFrequencyEntry } from '@/types'
 
 interface DosageFrequencyState {
@@ -12,9 +11,7 @@ interface DosageFrequencyState {
   searchEntries: (query: string) => DosageFrequencyEntry[]
 }
 
-export const useDosageFrequencyStore = create<DosageFrequencyState>()(
-  persist(
-    (set, get) => ({
+export const useDosageFrequencyStore = create<DosageFrequencyState>((set, get) => ({
       entries: [],
 
       addEntry: (entryData) => {
@@ -44,9 +41,4 @@ export const useDosageFrequencyStore = create<DosageFrequencyState>()(
           (e) => e.medicineName.toLowerCase().includes(term)
         )
       },
-    }),
-    {
-      name: 'prescribo-dosage-frequency',
-    }
-  )
-)
+    }))

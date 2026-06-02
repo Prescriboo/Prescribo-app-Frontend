@@ -167,6 +167,7 @@ export interface DoctorProfile {
   phone?: string
   email?: string
   website?: string
+  signature_text?: string
   default_template_id?: number
   default_language?: string
   created_at?: string

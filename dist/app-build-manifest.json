@@ -21,10 +21,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/prescriptions/page.js"
     ],
-    "/(app)/dashboard/page": [
+    "/(app)/history/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(app)/dashboard/page.js"
+      "static/chunks/app/(app)/history/page.js"
+    ],
+    "/(app)/patients/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(app)/patients/page.js"
+    ],
+    "/(app)/patients/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(app)/patients/[id]/page.js"
+    ],
+    "/(app)/templates/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(app)/templates/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

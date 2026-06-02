@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
 interface AuthState {
   isActivated: boolean
@@ -16,9 +15,7 @@ interface AuthState {
   logout: () => void
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
       isActivated: false,
       licenseKey: '',
       pin: '',
@@ -29,9 +26,4 @@ export const useAuthStore = create<AuthState>()(
       setPin: (pin) => set({ pin, hasPin: true }),
       skipPin: () => set({ hasPin: false }),
       logout: () => set({ isActivated: false, licenseKey: '', pin: '', hasPin: false, demoMode: false }),
-    }),
-    {
-      name: 'prescribo-auth',
-    }
-  )
-)
+    }))

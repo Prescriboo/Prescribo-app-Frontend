@@ -286,12 +286,12 @@ export default function PrescriptionsClientPage() {
               {/* Medicines Table */}
               <div className="mt-3">
                 <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
-                  <div>#</div>
+                  <div>No</div>
                   <div>Name</div>
                   <div>Dosage</div>
-                  <div>Freq</div>
-                  <div>Dur</div>
-                  <div>Inst</div>
+                  <div>Frequency</div>
+                  <div>Duration</div>
+                  <div>Instruction</div>
                 </div>
                 {viewRx.medicines.slice(0, originalCount).map((med, i) => (
                   <div key={`orig-${i}`} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
@@ -560,12 +560,12 @@ export default function PrescriptionsClientPage() {
 
             <div className="mt-3">
               <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
-                <div>#</div>
+                <div>No</div>
                 <div>Name</div>
                 <div>Dosage</div>
-                <div>Freq</div>
-                <div>Dur</div>
-                <div>Inst</div>
+                <div>Frequency</div>
+                <div>Duration</div>
+                <div>Instruction</div>
               </div>
               {currentRx.medicines.filter(m => m.name).map((med, i) => (
                 <div key={i} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">

@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Duration } from '@/types'
 import { mastersApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface DurationState {
   syncFromApi: (apiItems: { id: number; duration: string }[]) => void
 }
 
-export const useDurationStore = create<DurationState>()(
-  persist(
-    (set, get) => ({
+export const useDurationStore = create<DurationState>((set, get) => ({
       items: [],
       _apiAvailable: false,
 
@@ -86,9 +83,4 @@ export const useDurationStore = create<DurationState>()(
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((d) => ({ id: d.id, duration: d.duration })) })
       },
-    }),
-    {
-      name: 'prescribo-duration-master',
-    }
-  )
-)
+    }))

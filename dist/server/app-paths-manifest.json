@@ -1,5 +1,9 @@
 {
-  "/(app)/settings/page": "app/(app)/settings/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/(app)/prescriptions/page": "app/(app)/prescriptions/page.js",
-  "/(app)/dashboard/page": "app/(app)/dashboard/page.js"
+  "/(app)/history/page": "app/(app)/history/page.js",
+  "/(app)/settings/page": "app/(app)/settings/page.js",
+  "/(app)/patients/page": "app/(app)/patients/page.js",
+  "/(app)/templates/page": "app/(app)/templates/page.js",
+  "/(app)/patients/[id]/page": "app/(app)/patients/[id]/page.js"
 }

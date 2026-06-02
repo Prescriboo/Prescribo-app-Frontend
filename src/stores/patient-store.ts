@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Patient } from '@/types'
 import { patientsApi } from '@/lib/api'
 
@@ -38,9 +37,7 @@ function mapApiPatient(p: any): Patient {
   }
 }
 
-export const usePatientStore = create<PatientState>()(
-  persist(
-    (set, get) => ({
+export const usePatientStore = create<PatientState>((set, get) => ({
       patients: [],
       currentPatientId: null,
       _apiAvailable: false,
@@ -137,10 +134,4 @@ export const usePatientStore = create<PatientState>()(
       syncFromApi: (apiPatients) => {
         set({ patients: (apiPatients || []).map(mapApiPatient) })
       },
-    }),
-    {
-      name: 'prescribo-patients',
-      partialize: (state) => ({ patients: state.patients, currentPatientId: state.currentPatientId } as any),
-    }
-  )
-)
+    }))

@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Frequency } from '@/types'
 import { mastersApi } from '@/lib/api'
 
@@ -16,9 +15,7 @@ interface FrequencyState {
   syncFromApi: (apiItems: { id: number; frequency: string }[]) => void
 }
 
-export const useFrequencyStore = create<FrequencyState>()(
-  persist(
-    (set, get) => ({
+export const useFrequencyStore = create<FrequencyState>((set, get) => ({
       items: [],
       _apiAvailable: false,
 
@@ -86,9 +83,4 @@ export const useFrequencyStore = create<FrequencyState>()(
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((f) => ({ id: f.id, frequency: f.frequency })) })
       },
-    }),
-    {
-      name: 'prescribo-frequency-master',
-    }
-  )
-)
+    }))
