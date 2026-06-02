@@ -33,6 +33,11 @@ function del<T>(path: string) {
   return http<T>(path, { method: 'DELETE' })
 }
 
+function postForm<T>(path: string, formData: FormData) {
+  // Let browser set Content-Type with multipart boundary
+  return http<T>(path, { method: 'POST', body: formData, headers: {} })
+}
+
 // ============================================================
 // Types (mirroring backend schemas)
 // ============================================================
@@ -325,6 +330,15 @@ export const autocompleteApi = {
     get<{ id: number; medicine_name: string }[]>(`/api/autocomplete/medicines${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   createMedicine: (name: string) =>
     post<{ id: number; medicine_name: string }>('/api/autocomplete/medicines', { medicine_name: name }),
+  bulkUploadMedicines: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return postForm<{ inserted: number; skipped: number; names: string[] }>('/api/autocomplete/medicines/bulk-upload', formData)
+  },
+  deleteMedicine: (id: number) =>
+    del<{ message: string }>(`/api/autocomplete/medicines/${id}`),
+  bulkDeleteMedicines: (ids: number[]) =>
+    post<{ deleted: number }>('/api/autocomplete/medicines/bulk-delete', { ids }),
   dosages: () => get<{ id: number; dosage: string }[]>('/api/autocomplete/dosages'),
   frequencies: () => get<{ id: number; frequency: string }[]>('/api/autocomplete/frequencies'),
   durations: () => get<{ id: number; duration: string; duration_days?: number }[]>('/api/autocomplete/durations'),

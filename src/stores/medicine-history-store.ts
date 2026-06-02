@@ -10,7 +10,8 @@ interface MedicineHistoryState {
   setApiAvailable: (available: boolean) => void
   addEntry: (name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => Promise<void>
   updateEntry: (id: number, name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => Promise<void>
-  deleteEntry: (id: number) => void
+  deleteEntry: (id: number) => Promise<void>
+  deleteEntries: (ids: number[]) => Promise<void>
   searchEntries: (query: string) => MedicineHistoryEntry[]
   syncFromApi: (apiItems: { id: number; medicine_name: string }[]) => void
 }
@@ -57,9 +58,32 @@ export const useMedicineHistoryStore = create<MedicineHistoryState>((set, get) =
         }))
       },
 
-      deleteEntry: (id) => {
+      deleteEntry: async (id) => {
+        const state = get()
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.deleteMedicine(id)
+          } catch (e: any) {
+            console.warn('API deleteMedicine failed, falling back to local:', e.message)
+          }
+        }
         set((s) => ({
           entries: s.entries.filter((e) => e.id !== id),
+        }))
+      },
+
+      deleteEntries: async (ids) => {
+        if (ids.length === 0) return
+        const state = get()
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.bulkDeleteMedicines(ids)
+          } catch (e: any) {
+            console.warn('API bulkDeleteMedicines failed, falling back to local:', e.message)
+          }
+        }
+        set((s) => ({
+          entries: s.entries.filter((e) => !ids.includes(e.id)),
         }))
       },
 

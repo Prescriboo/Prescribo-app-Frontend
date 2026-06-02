@@ -13,6 +13,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 
 import { useUIStore } from '@/stores/ui-store'
+import { autocompleteApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,7 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   Building, Shield, Pill, Database, KeyRound,
-  Search, Plus, Trash2, Pencil, X, FileText, Download, Save,
+  Search, Plus, Trash2, Pencil, X, FileText, Download, Save, Upload,
   ListChecks, Clock, Calendar, UserRound, LayoutTemplate
 } from 'lucide-react'
 
@@ -195,7 +196,7 @@ function SecurityTab({ security, updateSecurity, addToast }: any) {
 
 /* ===================== MEDICINE HISTORY TAB (Names + File Upload) ===================== */
 function MedicineHistoryTab() {
-  const { entries, addEntry, updateEntry, deleteEntry, searchEntries } = useMedicineHistoryStore()
+  const { entries, addEntry, updateEntry, deleteEntry, deleteEntries, searchEntries, syncFromApi } = useMedicineHistoryStore()
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -206,7 +207,36 @@ function MedicineHistoryTab() {
   const [fileData, setFileData] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Bulk upload state
+  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [bulkFileName, setBulkFileName] = useState('')
+  const [bulkFileType, setBulkFileType] = useState<'pdf' | 'docx'>('pdf')
+  const [bulkFile, setBulkFile] = useState<File | null>(null)
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const bulkFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Bulk delete state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
+
   const filtered = search ? searchEntries(search) : entries
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length && filtered.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map(e => e.id)))
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -245,7 +275,60 @@ function MedicineHistoryTab() {
     }
     setShowModal(false)
   }
-  const handleDelete = (id: number) => { deleteEntry(id); addToast('Medicine deleted', 'info') }
+
+  // Bulk upload handlers
+  const handleBulkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (ext !== 'pdf' && ext !== 'docx') {
+      addToast('Only PDF and DOCX files are allowed', 'error')
+      return
+    }
+    setBulkFile(file)
+    setBulkFileName(file.name)
+    setBulkFileType(ext as 'pdf' | 'docx')
+  }
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile) { addToast('Please select a file', 'error'); return }
+    setBulkLoading(true)
+    try {
+      const res = await autocompleteApi.bulkUploadMedicines(bulkFile)
+      addToast(`${res.inserted} medicines imported, ${res.skipped} skipped`, 'success')
+      // Refresh list from API
+      const medicines = await autocompleteApi.medicines()
+      syncFromApi(medicines || [])
+      setShowBulkModal(false)
+      setBulkFile(null)
+      setBulkFileName('')
+      setBulkFileType('pdf')
+    } catch (err: any) {
+      addToast(err.message || 'Upload failed', 'error')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  // Delete handlers
+  const handleDeleteConfirm = async () => {
+    if (deleteId == null) return
+    await deleteEntry(deleteId)
+    addToast('Medicine deleted', 'info')
+    setDeleteId(null)
+  }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    await deleteEntries(ids)
+    addToast(`${ids.length} medicines deleted`, 'info')
+    setSelectedIds(new Set())
+    setShowBulkDeleteModal(false)
+  }
+
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length
+  const someSelected = selectedIds.size > 0
 
   return (
     <div className="max-w-[800px]">
@@ -254,15 +337,36 @@ function MedicineHistoryTab() {
           <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><Pill className="w-[18px] h-[18px]" /> Medicine History</h3>
           <p className="text-xs text-slate-400 mt-0.5">Master list of medicines with optional reference documents</p>
         </div>
-        <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Medicine</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setShowBulkModal(true); setBulkFile(null); setBulkFileName(''); setBulkFileType('pdf'); }}>
+            <Upload className="w-4 h-4" /> Bulk Upload
+          </Button>
+          <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Medicine</Button>
+        </div>
       </div>
       <div className="flex items-center gap-2.5 bg-bg border border-border rounded-xl px-4 py-2 w-full max-w-sm mb-4">
         <Search className="w-[18px] h-[18px] text-slate-400" />
         <Input className="bg-transparent border-none shadow-none focus-visible:ring-0 px-0 py-0 text-sm w-full" placeholder="Search medicines..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
+      {someSelected && (
+        <div className="flex items-center gap-2 mb-3">
+          <Button variant="danger" size="sm" onClick={() => setShowBulkDeleteModal(true)}>
+            <Trash2 className="w-4 h-4" /> Delete Selected ({selectedIds.size})
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Clear Selection</Button>
+        </div>
+      )}
       <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
         <table className="w-full">
           <thead><tr className="bg-bg">
+            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400 w-10">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+              />
+            </th>
             <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Medicine Name</th>
             <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Reference Doc</th>
             <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Added On</th>
@@ -270,7 +374,15 @@ function MedicineHistoryTab() {
           </tr></thead>
           <tbody>
             {filtered.length > 0 ? filtered.map(e => (
-              <tr key={e.id} className="hover:bg-slate-50 transition-all">
+              <tr key={e.id} className={cn("transition-all", selectedIds.has(e.id) ? "bg-primary-50" : "hover:bg-slate-50")}>
+                <td className="px-4 py-3.5 border-b border-slate-50">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                    checked={selectedIds.has(e.id)}
+                    onChange={() => toggleSelect(e.id)}
+                  />
+                </td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{e.name}</td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50">
                   {e.fileName ? (
@@ -285,16 +397,17 @@ function MedicineHistoryTab() {
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50">
                   <div className="flex gap-1">
                     <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => openEdit(e.id)} title="Edit"><Pencil className="w-4 h-4" /></button>
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => handleDelete(e.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => setDeleteId(e.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400">No medicines found. Click "Add Medicine" to create one.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">No medicines found. Click "Add Medicine" to create one.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+      {/* Add/Edit Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Edit Medicine' : 'Add Medicine'} footer={<><Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button><Button onClick={handleSave}>{editingId ? 'Update' : 'Save'}</Button></>}>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -317,6 +430,53 @@ function MedicineHistoryTab() {
             <p className="text-xs text-slate-400">Upload a reference document (PDF/DOCX) for this medicine</p>
           </div>
         </div>
+      </Modal>
+      {/* Bulk Upload Modal */}
+      <Modal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} title="Bulk Upload Medicines" footer={
+        <>
+          <Button variant="ghost" onClick={() => setShowBulkModal(false)} disabled={bulkLoading}>Cancel</Button>
+          <Button onClick={handleBulkUpload} disabled={bulkLoading || !bulkFile}>
+            {bulkLoading ? 'Uploading...' : 'Upload'}
+          </Button>
+        </>
+      }>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-slate-600">
+            Upload a PDF or DOCX file containing one medicine name per line. Duplicates will be skipped automatically.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">File (PDF or DOCX)</label>
+            <div className="flex items-center gap-2">
+              <input type="file" ref={bulkFileInputRef} accept=".pdf,.docx" className="hidden" onChange={handleBulkFileChange} />
+              <Button variant="outline" onClick={() => bulkFileInputRef.current?.click()} className="flex-shrink-0"><Upload className="w-4 h-4" /> Choose File</Button>
+              {bulkFileName ? (
+                <div className="flex items-center gap-2 bg-bg px-3 py-2 rounded-md border border-border flex-1 min-w-0">
+                  <FileText className={cn("w-4 h-4", bulkFileType === 'pdf' ? 'text-danger' : 'text-primary')} />
+                  <span className="text-sm text-slate-700 truncate">{bulkFileName}</span>
+                  <button className="ml-auto text-slate-400 hover:text-danger" onClick={() => { setBulkFile(null); setBulkFileName(''); setBulkFileType('pdf') }}><X className="w-4 h-4" /></button>
+                </div>
+              ) : <span className="text-xs text-slate-400">No file selected</span>}
+            </div>
+          </div>
+        </div>
+      </Modal>
+      {/* Single Delete Confirmation Modal */}
+      <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete Medicine" footer={
+        <>
+          <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+          <Button variant="danger" onClick={handleDeleteConfirm}>Delete</Button>
+        </>
+      }>
+        <p className="text-sm text-slate-600">Are you sure you want to delete this medicine? This action cannot be undone.</p>
+      </Modal>
+      {/* Bulk Delete Confirmation Modal */}
+      <Modal isOpen={showBulkDeleteModal} onClose={() => setShowBulkDeleteModal(false)} title="Delete Selected Medicines" footer={
+        <>
+          <Button variant="ghost" onClick={() => setShowBulkDeleteModal(false)}>Cancel</Button>
+          <Button variant="danger" onClick={handleBulkDeleteConfirm}>Delete {selectedIds.size}</Button>
+        </>
+      }>
+        <p className="text-sm text-slate-600">Are you sure you want to delete {selectedIds.size} selected medicine{selectedIds.size === 1 ? '' : 's'}? This action cannot be undone.</p>
       </Modal>
     </div>
   )
