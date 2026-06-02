@@ -1,7 +1,7 @@
 {
   "version": 4,
   "routes": {
-    "/activate": {
+    "/templates": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -14,8 +14,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/activate",
-      "dataRoute": "/activate.rsc",
+      "srcRoute": "/templates",
+      "dataRoute": "/templates.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -40,30 +40,6 @@
       "initialRevalidateSeconds": false,
       "srcRoute": "/history",
       "dataRoute": "/history.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
-    "/prescriptions": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/prescriptions",
-      "dataRoute": "/prescriptions.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -98,7 +74,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/patients": {
+    "/settings": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -111,8 +87,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/patients",
-      "dataRoute": "/patients.rsc",
+      "srcRoute": "/settings",
+      "dataRoute": "/settings.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -146,6 +122,54 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/dashboard": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/dashboard",
+      "dataRoute": "/dashboard.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/patients": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/patients",
+      "dataRoute": "/patients.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/pin": {
       "experimentalBypassFor": [
         {
@@ -170,7 +194,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/settings": {
+    "/activate": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -183,8 +207,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/settings",
-      "dataRoute": "/settings.rsc",
+      "srcRoute": "/activate",
+      "dataRoute": "/activate.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -194,7 +218,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/templates": {
+    "/prescriptions": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -207,32 +231,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/templates",
-      "dataRoute": "/templates.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
-    "/dashboard": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/dashboard",
-      "dataRoute": "/dashboard.rsc",
+      "srcRoute": "/prescriptions",
+      "dataRoute": "/prescriptions.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -296,8 +296,8 @@
   },
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "e7262fe0916b88a725795f24ceabb549",
-    "previewModeSigningKey": "3a6c1adaf55175af422fed37a5d1bdb3fdbdc8ee1bf67bcd9154f3dc41c85782",
-    "previewModeEncryptionKey": "9a7af88d871e06064398389a867185d5484f2ed93770246ac8ba8a0069a264ee"
+    "previewModeId": "51a79406b82ff18bf3d23d802f84bfee",
+    "previewModeSigningKey": "840cdb979f91fffdc188ce14f4887558074941a31f8a2c0e3129d39c6d39f602",
+    "previewModeEncryptionKey": "7ca5af9813d68d1cab62cb723ccb43b72e00eb12e115cff85b6ae8ac641ce147"
   }
 }

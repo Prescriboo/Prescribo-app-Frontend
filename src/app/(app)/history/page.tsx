@@ -6,11 +6,11 @@ import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Download, Eye, RotateCcw, Search } from 'lucide-react'
+import { Download, Eye, RotateCcw, Search, Trash2 } from 'lucide-react'
 
 export default function HistoryPage() {
   const router = useRouter()
-  const { prescriptions } = usePrescriptionStore()
+  const { prescriptions, deletePrescription } = usePrescriptionStore()
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
 
@@ -69,6 +69,13 @@ export default function HistoryPage() {
                         </button>
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?represcribe=${rx.id}`)} title="Represcribe">
                           <RotateCcw className="w-4 h-4" />
+                        </button>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={async () => {
+                          if (!window.confirm('Delete this prescription?')) return
+                          await deletePrescription(rx.id)
+                          addToast('Prescription deleted', 'info')
+                        }}>
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

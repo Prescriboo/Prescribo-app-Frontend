@@ -12,6 +12,7 @@ interface PatientState {
   setApiAvailable: (available: boolean) => void
   addPatient: (patient: Omit<Patient, 'id' | 'lastVisit' | 'status' | 'visits' | 'rxCount'>) => Promise<Patient>
   updatePatient: (id: number, data: Partial<Patient>) => Promise<void>
+  deletePatient: (id: number) => Promise<void>
   setCurrentPatient: (id: number | null) => void
   getPatient: (id: number) => Patient | undefined
   searchPatients: (query: string) => Patient[]
@@ -104,6 +105,22 @@ export const usePatientStore = create<PatientState>()(
 
         set((s) => ({
           patients: s.patients.map((p) => (p.id === id ? { ...p, ...data } : p)),
+        }))
+      },
+
+      deletePatient: async (id) => {
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await patientsApi.remove(id)
+          } catch (e: any) {
+            console.warn('API deletePatient failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          patients: s.patients.filter((p) => p.id !== id),
         }))
       },
 

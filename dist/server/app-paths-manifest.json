@@ -1,6 +1,3 @@
 {
-  "/(app)/prescriptions/page": "app/(app)/prescriptions/page.js",
-  "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/(app)/patients/page": "app/(app)/patients/page.js",
-  "/(app)/history/page": "app/(app)/history/page.js"
+  "/(app)/patients/page": "app/(app)/patients/page.js"
 }

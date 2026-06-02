@@ -7,13 +7,13 @@ import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getInitials } from '@/lib/utils'
-import { Plus, ArrowLeft } from 'lucide-react'
+import { Plus, ArrowLeft, Trash2 } from 'lucide-react'
 
 export default function PatientDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { getPatient } = usePatientStore()
-  const { getPatientPrescriptions } = usePrescriptionStore()
+  const { getPatientPrescriptions, deletePrescription } = usePrescriptionStore()
   const { addToast } = useUIStore()
 
   const patient = getPatient(Number(params.id))
@@ -72,10 +72,25 @@ export default function PatientDetailPage() {
         <h3 className="text-base font-bold mb-4 text-slate-900">Prescription History</h3>
         <div className="relative pl-7 timeline">
           {prescriptions.length > 0 ? prescriptions.map(rx => (
-            <div key={rx.id} className="timeline-item relative mb-5 bg-white border border-border rounded-lg p-4 hover:border-primary-light hover:shadow-sm transition-all cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
-              <div className="text-xs text-slate-400 font-bold mb-1 tracking-wide">{rx.date}</div>
-              <div><h4 className="text-sm font-bold mb-0.5">{rx.diagnosis}</h4><p className="text-xs text-slate-500">{rx.medicines.map(m => m.name).join(', ')}</p></div>
-              <div className="flex flex-wrap gap-1.5 mt-2">{rx.medicines.map(m => <Badge key={m.name} variant="default">{m.name}</Badge>)}</div>
+            <div key={rx.id} className="timeline-item relative mb-5 bg-white border border-border rounded-lg p-4 hover:border-primary-light hover:shadow-sm transition-all group">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
+                  <div className="text-xs text-slate-400 font-bold mb-1 tracking-wide">{rx.date}</div>
+                  <div><h4 className="text-sm font-bold mb-0.5">{rx.diagnosis}</h4><p className="text-xs text-slate-500">{rx.medicines.map(m => m.name).join(', ')}</p></div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">{rx.medicines.map(m => <Badge key={m.name} variant="default">{m.name}</Badge>)}</div>
+                </div>
+                <button
+                  className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold text-white bg-danger hover:bg-red-600 transition-all flex-shrink-0 ml-2 shadow-sm"
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    if (!window.confirm('Delete this prescription?')) return
+                    await deletePrescription(rx.id)
+                    addToast('Prescription deleted', 'info')
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
             </div>
           )) : <p className="text-slate-400 text-sm">No prescription history yet.</p>}
         </div>

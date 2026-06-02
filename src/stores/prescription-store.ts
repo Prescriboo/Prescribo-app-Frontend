@@ -23,6 +23,7 @@ interface PrescriptionState {
   setApiAvailable: (available: boolean) => void
   addPrescription: (rx: Omit<Prescription, 'id' | 'updateHistory'> & { complaint?: string; notes?: string }) => Promise<Prescription>
   updatePrescription: (id: number, addedMedicines: MedicineRow[], allMedicines: MedicineRow[], newDate: string) => Promise<void>
+  deletePrescription: (id: number) => Promise<void>
   getPatientPrescriptions: (patientId: number) => Prescription[]
   setCurrentRx: (data: Partial<PrescriptionState['currentRx']>) => void
   resetCurrentRx: () => void
@@ -146,6 +147,22 @@ export const usePrescriptionStore = create<PrescriptionState>()(
               updateHistory: [...history, { date: newDate, medicines: addedMedicines }],
             }
           }),
+        }))
+      },
+
+      deletePrescription: async (id) => {
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await prescriptionsApi.remove(id)
+          } catch (e: any) {
+            console.warn('API deletePrescription failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          prescriptions: s.prescriptions.filter((r) => r.id !== id),
         }))
       },
 

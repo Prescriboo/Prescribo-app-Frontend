@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
-import { Plus, Download, Eye, FilePlus, Search } from 'lucide-react'
+import { Plus, Download, Eye, FilePlus, Search, Trash2 } from 'lucide-react'
 
 export default function PatientsPage() {
   const router = useRouter()
-  const { patients, addPatient } = usePatientStore()
+  const { patients, addPatient, deletePatient } = usePatientStore()
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -93,6 +93,11 @@ export default function PatientsPage() {
                       <div className="flex gap-1">
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/patients/${p.id}`)}><Eye className="w-4 h-4" /></button>
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?patient=${p.id}`)}><FilePlus className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={async () => {
+                          if (!window.confirm('Delete this patient?')) return
+                          await deletePatient(p.id)
+                          addToast('Patient deleted', 'info')
+                        }}><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>
