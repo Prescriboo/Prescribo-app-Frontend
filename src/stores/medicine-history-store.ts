@@ -3,41 +3,56 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { MedicineHistoryEntry } from '@/types'
+import { autocompleteApi } from '@/lib/api'
 
 interface MedicineHistoryState {
   entries: MedicineHistoryEntry[]
-  addEntry: (name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => void
-  updateEntry: (id: number, name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => void
+  _apiAvailable: boolean
+  setApiAvailable: (available: boolean) => void
+  addEntry: (name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => Promise<void>
+  updateEntry: (id: number, name: string, file?: { fileName: string; fileType: 'pdf' | 'docx'; fileData: string }) => Promise<void>
   deleteEntry: (id: number) => void
   searchEntries: (query: string) => MedicineHistoryEntry[]
+  syncFromApi: (apiItems: { id: number; medicine_name: string }[]) => void
 }
 
 export const useMedicineHistoryStore = create<MedicineHistoryState>()(
   persist(
     (set, get) => ({
-      entries: [
-        { id: 1, name: 'Amoxicillin', createdAt: '2026-05-20' },
-        { id: 2, name: 'Metformin', createdAt: '2026-05-18' },
-        { id: 3, name: 'Paracetamol', createdAt: '2026-05-15' },
-        { id: 4, name: 'Omeprazole', createdAt: '2026-05-10' },
-        { id: 5, name: 'Cetirizine', createdAt: '2026-05-08' },
-      ],
+      entries: [],
+      _apiAvailable: false,
 
-      addEntry: (name, file) => {
+      setApiAvailable: (available) => set({ _apiAvailable: available }),
+
+      addEntry: async (name, file) => {
         if (!name.trim()) return
+        const state = get()
         const newEntry: MedicineHistoryEntry = {
-          id: get().entries.length + 1,
+          id: state.entries.length + 1,
           name: name.trim(),
           ...(file || {}),
           createdAt: new Date().toISOString().split('T')[0],
         }
-        set((state) => ({ entries: [newEntry, ...state.entries] }))
+
+        if (state._apiAvailable) {
+          try {
+            const created = await autocompleteApi.createMedicine(name.trim())
+            set((s) => ({
+              entries: [{ id: created.id, name: created.medicine_name, createdAt: new Date().toISOString().split('T')[0] }, ...s.entries],
+            }))
+            return
+          } catch (e: any) {
+            console.warn('API createMedicine failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({ entries: [newEntry, ...s.entries] }))
       },
 
-      updateEntry: (id, name, file) => {
+      updateEntry: async (id, name, file) => {
         if (!name.trim()) return
-        set((state) => ({
-          entries: state.entries.map((e) =>
+        set((s) => ({
+          entries: s.entries.map((e) =>
             e.id === id
               ? { ...e, name: name.trim(), ...(file ? { fileName: file.fileName, fileType: file.fileType, fileData: file.fileData } : {}) }
               : e
@@ -46,14 +61,24 @@ export const useMedicineHistoryStore = create<MedicineHistoryState>()(
       },
 
       deleteEntry: (id) => {
-        set((state) => ({
-          entries: state.entries.filter((e) => e.id !== id),
+        set((s) => ({
+          entries: s.entries.filter((e) => e.id !== id),
         }))
       },
 
       searchEntries: (query) => {
         const term = query.toLowerCase()
         return get().entries.filter((e) => e.name.toLowerCase().includes(term))
+      },
+
+      syncFromApi: (apiItems) => {
+        set({
+          entries: (apiItems || []).map((m) => ({
+            id: m.id,
+            name: m.medicine_name,
+            createdAt: new Date().toISOString().split('T')[0],
+          })),
+        })
       },
     }),
     {

@@ -1,7 +1,7 @@
 import PatientDetailPage from './patient-detail'
 
 export function generateStaticParams() {
-  return [{ id: '1' }]
+  return [{ id: '_placeholder' }]
 }
 
 export default function Page() {

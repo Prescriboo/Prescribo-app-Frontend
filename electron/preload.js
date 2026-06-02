@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld('electron', {
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
 
+  // API / Backend URL
+  api: {
+    getUrl: () => ipcRenderer.invoke('api:getUrl'),
+    isReady: () => ipcRenderer.invoke('api:isReady'),
+  },
+
   // Database (SQLite via FastAPI backend)
   db: {
     query: (sql, params) => ipcRenderer.invoke('db:query', sql, params),

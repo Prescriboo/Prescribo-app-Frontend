@@ -15,11 +15,7 @@ interface DosageFrequencyState {
 export const useDosageFrequencyStore = create<DosageFrequencyState>()(
   persist(
     (set, get) => ({
-      entries: [
-        { id: 1, medicineName: 'Amoxicillin', dosageId: 2, frequencyId: 3, durationId: 4, notes: 'Take after meals', createdAt: '2026-05-20' },
-        { id: 2, medicineName: 'Metformin', dosageId: 2, frequencyId: 2, durationId: 7, notes: 'Take with breakfast and dinner', createdAt: '2026-05-18' },
-        { id: 3, medicineName: 'Paracetamol', dosageId: 3, frequencyId: 5, durationId: 2, notes: 'As needed for fever', createdAt: '2026-05-15' },
-      ],
+      entries: [],
 
       addEntry: (entryData) => {
         const newEntry: DosageFrequencyEntry = {

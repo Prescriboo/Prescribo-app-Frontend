@@ -13,17 +13,17 @@ export default function DashboardPage() {
   const { prescriptions } = usePrescriptionStore()
 
   const stats = [
-    { label: 'Total Patients', value: patients.length.toLocaleString(), change: '+12% this month', icon: TrendingUp, color: 'text-success' },
-    { label: 'Prescriptions', value: prescriptions.length.toLocaleString(), change: '+8% this month', icon: FileText, color: 'text-success' },
-    { label: 'Revenue', value: '$24.5k', change: '+15% this month', icon: TrendingUp, color: 'text-success' },
-    { label: 'Pending', value: '18', change: '5 urgent', icon: AlertCircle, color: 'text-warning' },
+    { label: 'Total Patients', value: patients.length.toLocaleString(), change: '', icon: TrendingUp, color: 'text-success' },
+    { label: 'Prescriptions', value: prescriptions.length.toLocaleString(), change: '', icon: FileText, color: 'text-success' },
+    // { label: 'Revenue', value: '-', change: '', icon: TrendingUp, color: 'text-slate-400' },
+    // { label: 'Pending', value: '-', change: '', icon: AlertCircle, color: 'text-slate-400' },
   ]
 
   const recent = prescriptions.slice(0, 4)
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-4 gap-5 mb-5">
+      <div className="grid grid-cols-2 gap-5 mb-5">
         {stats.map((stat, i) => (
           <Card key={i} className="p-5 hover:-translate-y-1 hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-teal opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -44,19 +44,23 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div>
-            {recent.map((rx) => (
-              <div
-                key={rx.id}
-                className="flex items-center justify-between py-3.5 border-b border-slate-50 hover:pl-1 transition-all cursor-pointer"
-                onClick={() => router.push(`/prescriptions?view=${rx.id}`)}
-              >
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900">{rx.patientName}</h4>
-                  <p className="text-xs text-slate-400">{rx.medicines.slice(0, 2).map(m => m.name).join(' + ')}</p>
+            {recent.length === 0 ? (
+              <div className="py-8 text-center text-sm text-slate-400">No prescriptions yet. Create your first prescription to see it here.</div>
+            ) : (
+              recent.map((rx) => (
+                <div
+                  key={rx.id}
+                  className="flex items-center justify-between py-3.5 border-b border-slate-50 hover:pl-1 transition-all cursor-pointer"
+                  onClick={() => router.push(`/prescriptions?view=${rx.id}`)}
+                >
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900">{rx.patientName}</h4>
+                    <p className="text-xs text-slate-400">{rx.medicines.slice(0, 2).map(m => m.name).join(' + ')}</p>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium flex-shrink-0 ml-4">{rx.date}</span>
                 </div>
-                <span className="text-xs text-slate-500 font-medium flex-shrink-0 ml-4">{rx.date}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
         <div className="bg-white border border-border rounded-xl p-5 shadow-sm">

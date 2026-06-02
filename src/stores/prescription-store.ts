@@ -1,8 +1,9 @@
 'use client'
 
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { Prescription, MedicineRow } from '@/types'
-import { DEMO_PRESCRIPTIONS } from '@/lib/constants'
+import { prescriptionsApi } from '@/lib/api'
 
 interface PrescriptionState {
   prescriptions: Prescription[]
@@ -18,8 +19,10 @@ interface PrescriptionState {
   }
   editingRxId: number | null
   paperSize: 'A4' | 'A5'
-  addPrescription: (rx: Omit<Prescription, 'id' | 'updateHistory'>) => Prescription
-  updatePrescription: (id: number, newMedicines: MedicineRow[], newDate: string) => void
+  _apiAvailable: boolean
+  setApiAvailable: (available: boolean) => void
+  addPrescription: (rx: Omit<Prescription, 'id' | 'updateHistory'> & { complaint?: string; notes?: string }) => Promise<Prescription>
+  updatePrescription: (id: number, addedMedicines: MedicineRow[], allMedicines: MedicineRow[], newDate: string) => Promise<void>
   getPatientPrescriptions: (patientId: number) => Prescription[]
   setCurrentRx: (data: Partial<PrescriptionState['currentRx']>) => void
   resetCurrentRx: () => void
@@ -28,6 +31,26 @@ interface PrescriptionState {
   addMedicineRow: (medicine?: Partial<MedicineRow>) => void
   removeMedicineRow: (index: number) => void
   updateMedicineRow: (index: number, data: Partial<MedicineRow>) => void
+  syncFromApi: (apiRx: any[]) => void
+}
+
+function mapApiPrescription(r: any): Prescription {
+  return {
+    id: r.id,
+    patientId: r.patient_id,
+    patientName: r.patient_name || '',
+    date: r.prescription_date || r.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+    diagnosis: r.diagnosis || '',
+    medicines: (r.medicine_rows || []).map((m: any) => ({
+      name: m.medicine_name,
+      dose: m.dosage || '',
+      freq: m.frequency || '',
+      dur: m.duration || '',
+      inst: m.instructions || '',
+    })),
+    doctor: '',
+    updateHistory: [] as { date: string; medicines: MedicineRow[] }[],
+  }
 }
 
 const defaultRx = {
@@ -41,71 +64,139 @@ const defaultRx = {
   medicines: [{ name: '', dose: '', freq: '', dur: '', inst: '' }],
 }
 
-export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
-  prescriptions: DEMO_PRESCRIPTIONS.map(rx => ({ ...rx, updateHistory: [] })),
-  currentRx: { ...defaultRx },
-  editingRxId: null,
-  paperSize: 'A5',
+export const usePrescriptionStore = create<PrescriptionState>()(
+  persist(
+    (set, get) => ({
+      prescriptions: [],
+      currentRx: { ...defaultRx },
+      editingRxId: null,
+      paperSize: 'A5',
+      _apiAvailable: false,
 
-  addPrescription: (rx) => {
-    const newRx: Prescription = { id: get().prescriptions.length + 1, ...rx, updateHistory: [] }
-    set((state) => ({ prescriptions: [newRx, ...state.prescriptions] }))
-    return newRx
-  },
+      setApiAvailable: (available) => set({ _apiAvailable: available }),
 
-  updatePrescription: (id, newMedicines, newDate) => {
-    set((state) => ({
-      prescriptions: state.prescriptions.map((r) => {
-        if (r.id !== id) return r
-        const history = r.updateHistory || []
-        return {
-          ...r,
-          medicines: [...r.medicines, ...newMedicines],
-          date: newDate,
-          updateHistory: [
-            ...history,
-            { date: newDate, medicines: newMedicines }
-          ]
+      addPrescription: async (rx) => {
+        const state = get()
+        const newRx: Prescription = {
+          id: state.prescriptions.length + 1,
+          ...rx,
+          updateHistory: [],
         }
-      }),
-    }))
-  },
 
-  getPatientPrescriptions: (patientId) =>
-    get()
-      .prescriptions.filter((r) => r.patientId === patientId)
-      .sort((a, b) => b.id - a.id),
+        if (state._apiAvailable && rx.patientId) {
+          try {
+            const created = await prescriptionsApi.create({
+              patient_id: rx.patientId,
+              patient_name: rx.patientName,
+              prescription_date: rx.date,
+              chief_complaints: rx.complaint,
+              diagnosis: rx.diagnosis,
+              special_instructions: rx.notes,
+              paper_size: state.paperSize,
+              medicine_rows: rx.medicines.map((m, i) => ({
+                medicine_name: m.name,
+                dosage: m.dose,
+                frequency: m.freq,
+                duration: m.dur,
+                instructions: m.inst,
+                display_order: i,
+              })),
+            })
+            const mapped = mapApiPrescription(created)
+            set((s) => ({ prescriptions: [mapped, ...s.prescriptions] }))
+            return mapped
+          } catch (e: any) {
+            console.warn('API addPrescription failed, falling back to local:', e.message)
+          }
+        }
 
-  setCurrentRx: (data) =>
-    set((state) => ({ currentRx: { ...state.currentRx, ...data } })),
-
-  resetCurrentRx: () => set({ currentRx: { ...defaultRx, date: new Date().toISOString().split('T')[0] }, editingRxId: null }),
-
-  setEditingRxId: (id) => set({ editingRxId: id }),
-
-  setPaperSize: (size) => set({ paperSize: size }),
-
-  addMedicineRow: (medicine = {}) =>
-    set((state) => ({
-      currentRx: {
-        ...state.currentRx,
-        medicines: [...state.currentRx.medicines, { name: '', dose: '', freq: '', dur: '', inst: '', ...medicine }],
+        set((s) => ({ prescriptions: [newRx, ...s.prescriptions] }))
+        return newRx
       },
-    })),
 
-  removeMedicineRow: (index) =>
-    set((state) => ({
-      currentRx: {
-        ...state.currentRx,
-        medicines: state.currentRx.medicines.filter((_, i) => i !== index),
-      },
-    })),
+      updatePrescription: async (id, addedMedicines, allMedicines, newDate) => {
+        const state = get()
+        const existing = state.prescriptions.find((r) => r.id === id)
 
-  updateMedicineRow: (index, data) =>
-    set((state) => ({
-      currentRx: {
-        ...state.currentRx,
-        medicines: state.currentRx.medicines.map((m, i) => (i === index ? { ...m, ...data } : m)),
+        if (state._apiAvailable && existing) {
+          try {
+            await prescriptionsApi.update(id, {
+              prescription_date: newDate,
+              medicine_rows: allMedicines.map((m, i) => ({
+                medicine_name: m.name,
+                dosage: m.dose,
+                frequency: m.freq,
+                duration: m.dur,
+                instructions: m.inst,
+                display_order: i,
+              })),
+            })
+          } catch (e: any) {
+            console.warn('API updatePrescription failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          prescriptions: s.prescriptions.map((r) => {
+            if (r.id !== id) return r
+            const history = r.updateHistory || []
+            return {
+              ...r,
+              date: newDate,
+              updateHistory: [...history, { date: newDate, medicines: addedMedicines }],
+            }
+          }),
+        }))
       },
-    })),
-}))
+
+      getPatientPrescriptions: (patientId) =>
+        get()
+          .prescriptions.filter((r) => r.patientId === patientId)
+          .sort((a, b) => b.id - a.id),
+
+      setCurrentRx: (data) =>
+        set((state) => ({ currentRx: { ...state.currentRx, ...data } })),
+
+      resetCurrentRx: () => set({ currentRx: { ...defaultRx, date: new Date().toISOString().split('T')[0] }, editingRxId: null }),
+
+      setEditingRxId: (id) => set({ editingRxId: id }),
+
+      setPaperSize: (size) => set({ paperSize: size }),
+
+      addMedicineRow: (medicine = {}) =>
+        set((state) => ({
+          currentRx: {
+            ...state.currentRx,
+            medicines: [...state.currentRx.medicines, { name: '', dose: '', freq: '', dur: '', inst: '', ...medicine }],
+          },
+        })),
+
+      removeMedicineRow: (index) =>
+        set((state) => ({
+          currentRx: {
+            ...state.currentRx,
+            medicines: state.currentRx.medicines.filter((_, i) => i !== index),
+          },
+        })),
+
+      updateMedicineRow: (index, data) =>
+        set((state) => ({
+          currentRx: {
+            ...state.currentRx,
+            medicines: state.currentRx.medicines.map((m, i) => (i === index ? { ...m, ...data } : m)),
+          },
+        })),
+
+      syncFromApi: (apiRx) => {
+        set({ prescriptions: (apiRx || []).map(mapApiPrescription) })
+      },
+    }),
+    {
+      name: 'prescribo-prescriptions',
+      partialize: (state) => ({
+        prescriptions: state.prescriptions,
+        paperSize: state.paperSize,
+      } as any),
+    }
+  )
+)

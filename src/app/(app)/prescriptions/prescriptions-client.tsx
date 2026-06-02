@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 export default function PrescriptionsClientPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { patients, getPatient } = usePatientStore()
+  const { patients, getPatient, addPatient } = usePatientStore()
   const { prescriptions, currentRx, setCurrentRx, addMedicineRow, removeMedicineRow, updateMedicineRow, addPrescription, updatePrescription, resetCurrentRx, setEditingRxId, editingRxId, paperSize, setPaperSize } = usePrescriptionStore()
   const { clinic, templateStyle } = useSettingsStore()
   const { items: footerLines } = usePrescriptionFooterStore()
@@ -43,6 +43,7 @@ export default function PrescriptionsClientPage() {
 
   const [viewMode, setViewMode] = useState(false)
   const [viewRx, setViewRx] = useState<typeof prescriptions[0] | null>(null)
+  const previousMedicinesRef = useRef<typeof currentRx.medicines>([])
 
   const focusNextField = () => {
     const fields = Array.from(document.querySelectorAll('[data-enter-nav]')) as HTMLElement[]
@@ -99,6 +100,9 @@ export default function PrescriptionsClientPage() {
       if (rx) {
         setEditingRxId(rx.id)
         const p = getPatient(rx.patientId)
+        const history = rx.updateHistory || []
+        const latestMedicines = history.length > 0 ? history[history.length - 1].medicines : rx.medicines
+        previousMedicinesRef.current = latestMedicines.map(m => ({ ...m }))
         setCurrentRx({
           patientName: rx.patientName,
           patientAge: p ? `${p.age} / ${p.gender}` : '',
@@ -107,7 +111,7 @@ export default function PrescriptionsClientPage() {
           complaint: '',
           diagnosis: rx.diagnosis,
           notes: '',
-          medicines: rx.medicines.map(m => ({ ...m })),
+          medicines: latestMedicines.map(m => ({ ...m })),
         })
         addToast('Loaded prescription for update. Add new medicines below.', 'info')
       }
@@ -131,13 +135,21 @@ export default function PrescriptionsClientPage() {
     }
   }, [patientId, represcribeId, viewMode, updateId])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentRx.patientName.trim()) { addToast('Please enter patient name', 'error'); return }
     const meds = currentRx.medicines.filter(m => m.name.trim())
     if (meds.length === 0) { addToast('Please add at least one medicine', 'error'); return }
 
     if (editingRxId) {
-      updatePrescription(editingRxId, meds, currentRx.date || new Date().toISOString().split('T')[0])
+      const previous = previousMedicinesRef.current
+      const newMedicines = meds.filter(m =>
+        !previous.some(pm => pm.name === m.name && pm.dose === m.dose && pm.freq === m.freq && pm.dur === m.dur && pm.inst === m.inst)
+      )
+      if (newMedicines.length === 0) {
+        addToast('No new medicines to add', 'error')
+        return
+      }
+      await updatePrescription(editingRxId, newMedicines, meds, currentRx.date || new Date().toISOString().split('T')[0])
       addToast('Prescription updated with new medicines!', 'success')
       setTimeout(() => { resetCurrentRx(); router.push('/history') }, 500)
       return
@@ -145,14 +157,22 @@ export default function PrescriptionsClientPage() {
 
     let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
     if (!p) {
-      p = { id: patients.length + 1, name: currentRx.patientName, age: '-', gender: '-', phone: '-', email: '', allergies: '', conditions: '', lastVisit: 'Just now', status: 'Active', visits: 0, rxCount: 0 }
+      p = await addPatient({
+        name: currentRx.patientName,
+        age: '-',
+        gender: '-',
+        phone: '-',
+        email: '',
+        allergies: '',
+        conditions: '',
+      })
     }
 
-    addPrescription({
+    await addPrescription({
       patientId: p.id,
       patientName: p.name,
       date: currentRx.date || new Date().toISOString().split('T')[0],
-      diagnosis: currentRx.diagnosis || 'General',
+      diagnosis: currentRx.diagnosis || '',
       medicines: meds,
       doctor: clinic.doctorName,
     })
@@ -182,7 +202,7 @@ export default function PrescriptionsClientPage() {
   // ===================== VIEW MODE =====================
   if (viewMode && viewRx) {
     const history = viewRx.updateHistory || []
-    const originalCount = viewRx.medicines.length - history.reduce((sum, h) => sum + h.medicines.length, 0)
+    const originalCount = viewRx.medicines.length
 
     return (
       <div className="flex h-full">

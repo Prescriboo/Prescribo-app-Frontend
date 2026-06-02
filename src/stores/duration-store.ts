@@ -3,58 +3,88 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Duration } from '@/types'
+import { mastersApi } from '@/lib/api'
 
 interface DurationState {
   items: Duration[]
-  addItem: (duration: string) => void
-  updateItem: (id: number, duration: string) => void
-  deleteItem: (id: number) => void
+  _apiAvailable: boolean
+  setApiAvailable: (available: boolean) => void
+  addItem: (duration: string) => Promise<void>
+  updateItem: (id: number, duration: string) => Promise<void>
+  deleteItem: (id: number) => Promise<void>
   getDurationById: (id: number) => string
+  syncFromApi: (apiItems: { id: number; duration: string }[]) => void
 }
 
 export const useDurationStore = create<DurationState>()(
   persist(
     (set, get) => ({
-      items: [
-        { id: 1, duration: '1 day' },
-        { id: 2, duration: '3 days' },
-        { id: 3, duration: '5 days' },
-        { id: 4, duration: '7 days' },
-        { id: 5, duration: '10 days' },
-        { id: 6, duration: '14 days' },
-        { id: 7, duration: '1 month' },
-        { id: 8, duration: '2 months' },
-        { id: 9, duration: '3 months' },
-        { id: 10, duration: '6 months' },
-        { id: 11, duration: '1 year' },
-        { id: 12, duration: 'As directed' },
-      ],
+      items: [],
+      _apiAvailable: false,
 
-      addItem: (duration) => {
+      setApiAvailable: (available) => set({ _apiAvailable: available }),
+
+      addItem: async (duration) => {
         if (!duration.trim()) return
+        const state = get()
         const newItem: Duration = {
-          id: get().items.length + 1,
+          id: state.items.length + 1,
           duration: duration.trim(),
         }
-        set((state) => ({ items: [...state.items, newItem] }))
+
+        if (state._apiAvailable) {
+          try {
+            const created = await mastersApi.durations.create(duration.trim())
+            set((s) => ({ items: [...s.items, { id: created.id, duration: created.duration }] }))
+            return
+          } catch (e: any) {
+            console.warn('API addDuration failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({ items: [...s.items, newItem] }))
       },
 
-      updateItem: (id, duration) => {
+      updateItem: async (id, duration) => {
         if (!duration.trim()) return
-        set((state) => ({
-          items: state.items.map((item) => (item.id === id ? { ...item, duration: duration.trim() } : item)),
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await mastersApi.durations.update(id, duration.trim())
+          } catch (e: any) {
+            console.warn('API updateDuration failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          items: s.items.map((item) => (item.id === id ? { ...item, duration: duration.trim() } : item)),
         }))
       },
 
-      deleteItem: (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+      deleteItem: async (id) => {
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await mastersApi.durations.remove(id)
+          } catch (e: any) {
+            console.warn('API deleteDuration failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          items: s.items.filter((item) => item.id !== id),
         }))
       },
 
       getDurationById: (id) => {
         const item = get().items.find((i) => i.id === id)
         return item?.duration || ''
+      },
+
+      syncFromApi: (apiItems) => {
+        set({ items: (apiItems || []).map((d) => ({ id: d.id, duration: d.duration })) })
       },
     }),
     {

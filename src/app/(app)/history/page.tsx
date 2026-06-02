@@ -52,25 +52,29 @@ export default function HistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(rx => (
-                <tr key={rx.id} className="hover:bg-slate-50 transition-all cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.date}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{rx.patientName}</strong></td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.diagnosis}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.medicines.map(m => m.name).join(', ')}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.doctor}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?view=${rx.id}`)} title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?represcribe=${rx.id}`)} title="Represcribe">
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">No prescriptions found. Create a new prescription to see it here.</td></tr>
+              ) : (
+                filtered.map(rx => (
+                  <tr key={rx.id} className="hover:bg-slate-50 transition-all cursor-pointer" onClick={() => router.push(`/prescriptions?view=${rx.id}`)}>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.date}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{rx.patientName}</strong></td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.diagnosis}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.medicines.map(m => m.name).join(', ')}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{rx.doctor}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?view=${rx.id}`)} title="View">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?represcribe=${rx.id}`)} title="Represcribe">
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

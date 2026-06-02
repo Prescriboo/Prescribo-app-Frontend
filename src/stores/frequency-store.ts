@@ -3,58 +3,88 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Frequency } from '@/types'
+import { mastersApi } from '@/lib/api'
 
 interface FrequencyState {
   items: Frequency[]
-  addItem: (frequency: string) => void
-  updateItem: (id: number, frequency: string) => void
-  deleteItem: (id: number) => void
+  _apiAvailable: boolean
+  setApiAvailable: (available: boolean) => void
+  addItem: (frequency: string) => Promise<void>
+  updateItem: (id: number, frequency: string) => Promise<void>
+  deleteItem: (id: number) => Promise<void>
   getFrequencyById: (id: number) => string
+  syncFromApi: (apiItems: { id: number; frequency: string }[]) => void
 }
 
 export const useFrequencyStore = create<FrequencyState>()(
   persist(
     (set, get) => ({
-      items: [
-        { id: 1, frequency: 'Once daily' },
-        { id: 2, frequency: 'Twice daily' },
-        { id: 3, frequency: '3 times daily' },
-        { id: 4, frequency: '4 times daily' },
-        { id: 5, frequency: 'Every 6 hours' },
-        { id: 6, frequency: 'Every 8 hours' },
-        { id: 7, frequency: 'Every 12 hours' },
-        { id: 8, frequency: 'As needed (SOS)' },
-        { id: 9, frequency: 'Before meals' },
-        { id: 10, frequency: 'After meals' },
-        { id: 11, frequency: 'At bedtime' },
-        { id: 12, frequency: 'Morning only' },
-      ],
+      items: [],
+      _apiAvailable: false,
 
-      addItem: (frequency) => {
+      setApiAvailable: (available) => set({ _apiAvailable: available }),
+
+      addItem: async (frequency) => {
         if (!frequency.trim()) return
+        const state = get()
         const newItem: Frequency = {
-          id: get().items.length + 1,
+          id: state.items.length + 1,
           frequency: frequency.trim(),
         }
-        set((state) => ({ items: [...state.items, newItem] }))
+
+        if (state._apiAvailable) {
+          try {
+            const created = await mastersApi.frequencies.create(frequency.trim())
+            set((s) => ({ items: [...s.items, { id: created.id, frequency: created.frequency }] }))
+            return
+          } catch (e: any) {
+            console.warn('API addFrequency failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({ items: [...s.items, newItem] }))
       },
 
-      updateItem: (id, frequency) => {
+      updateItem: async (id, frequency) => {
         if (!frequency.trim()) return
-        set((state) => ({
-          items: state.items.map((item) => (item.id === id ? { ...item, frequency: frequency.trim() } : item)),
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await mastersApi.frequencies.update(id, frequency.trim())
+          } catch (e: any) {
+            console.warn('API updateFrequency failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          items: s.items.map((item) => (item.id === id ? { ...item, frequency: frequency.trim() } : item)),
         }))
       },
 
-      deleteItem: (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+      deleteItem: async (id) => {
+        const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await mastersApi.frequencies.remove(id)
+          } catch (e: any) {
+            console.warn('API deleteFrequency failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({
+          items: s.items.filter((item) => item.id !== id),
         }))
       },
 
       getFrequencyById: (id) => {
         const item = get().items.find((i) => i.id === id)
         return item?.frequency || ''
+      },
+
+      syncFromApi: (apiItems) => {
+        set({ items: (apiItems || []).map((f) => ({ id: f.id, frequency: f.frequency })) })
       },
     }),
     {

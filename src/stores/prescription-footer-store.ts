@@ -14,11 +14,7 @@ interface PrescriptionFooterState {
 export const usePrescriptionFooterStore = create<PrescriptionFooterState>()(
   persist(
     (set, get) => ({
-      items: [
-        { id: 1, label: 'Consultation', value: 'Mon-Sat: 9:00 AM - 6:00 PM' },
-        { id: 2, label: 'Address', value: '123 Medical Center Rd, Bangalore - 560001' },
-        { id: 3, label: 'Phone', value: '+91 98765 43210' },
-      ],
+      items: [],
 
       addItem: (label, value) => {
         if (!label.trim() || !value.trim()) return

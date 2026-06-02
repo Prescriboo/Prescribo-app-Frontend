@@ -1,65 +1,127 @@
 const { ipcMain } = require('electron')
+const { getBackendUrl } = require('./api')
 
-// These handlers will connect to your FastAPI SQLite backend
-// For now they return demo data or pass through to the API
+const BASE = () => getBackendUrl() || 'http://localhost:8000'
 
+async function apiFetch(path, options = {}) {
+  const url = `${BASE()}${path}`
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }))
+    throw new Error(err.detail || `HTTP ${res.status}`)
+  }
+  if (res.status === 204) return { success: true }
+  return res.json()
+}
+
+// Legacy IPC handlers — now proxy to FastAPI backend
 ipcMain.handle('db:query', async (event, sql, params) => {
-  // TODO: Connect to FastAPI backend
-  console.log('DB Query:', sql, params)
+  console.log('DB Query (deprecated):', sql, params)
   return { success: true, rows: [] }
 })
 
 ipcMain.handle('db:getPatients', async () => {
-  // TODO: Fetch from FastAPI /patients endpoint
-  return []
+  try {
+    return await apiFetch('/api/patients')
+  } catch (err) {
+    console.error('db:getPatients error:', err.message)
+    return []
+  }
 })
 
 ipcMain.handle('db:getPatient', async (event, id) => {
-  // TODO: Fetch from FastAPI /patients/{id}
-  return null
+  try {
+    return await apiFetch(`/api/patients/${id}`)
+  } catch (err) {
+    console.error('db:getPatient error:', err.message)
+    return null
+  }
 })
 
 ipcMain.handle('db:addPatient', async (event, data) => {
-  // TODO: POST to FastAPI /patients
-  console.log('Add Patient:', data)
-  return { id: 1, ...data }
+  try {
+    return await apiFetch('/api/patients', { method: 'POST', body: JSON.stringify(data) })
+  } catch (err) {
+    console.error('db:addPatient error:', err.message)
+    return { id: Date.now(), ...data }
+  }
 })
 
 ipcMain.handle('db:updatePatient', async (event, id, data) => {
-  // TODO: PUT to FastAPI /patients/{id}
-  console.log('Update Patient:', id, data)
-  return { success: true }
+  try {
+    return await apiFetch(`/api/patients/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  } catch (err) {
+    console.error('db:updatePatient error:', err.message)
+    return { success: true }
+  }
 })
 
 ipcMain.handle('db:getPrescriptions', async () => {
-  // TODO: Fetch from FastAPI /prescriptions
-  return []
+  try {
+    return await apiFetch('/api/prescriptions')
+  } catch (err) {
+    console.error('db:getPrescriptions error:', err.message)
+    return []
+  }
 })
 
 ipcMain.handle('db:addPrescription', async (event, data) => {
-  // TODO: POST to FastAPI /prescriptions
-  console.log('Add Prescription:', data)
-  return { id: 1, ...data }
+  try {
+    return await apiFetch('/api/prescriptions', { method: 'POST', body: JSON.stringify(data) })
+  } catch (err) {
+    console.error('db:addPrescription error:', err.message)
+    return { id: Date.now(), ...data }
+  }
 })
 
 ipcMain.handle('db:updatePrescription', async (event, id, data) => {
-  // TODO: PUT to FastAPI /prescriptions/{id}
-  console.log('Update Prescription:', id, data)
-  return { success: true }
+  try {
+    return await apiFetch(`/api/prescriptions/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  } catch (err) {
+    console.error('db:updatePrescription error:', err.message)
+    return { success: true }
+  }
 })
 
 ipcMain.handle('db:getTemplates', async () => {
-  // TODO: Fetch from FastAPI /templates
-  return []
+  try {
+    return await apiFetch('/api/templates')
+  } catch (err) {
+    console.error('db:getTemplates error:', err.message)
+    return []
+  }
 })
 
 ipcMain.handle('db:getSettings', async () => {
-  // TODO: Fetch from FastAPI /settings
-  return {}
+  try {
+    const [doctor, clinic, security] = await Promise.all([
+      apiFetch('/api/settings/doctor-profile').catch(() => null),
+      apiFetch('/api/settings/clinic').catch(() => null),
+      apiFetch('/api/settings/security').catch(() => null),
+    ])
+    return { doctor, clinic, security }
+  } catch (err) {
+    console.error('db:getSettings error:', err.message)
+    return {}
+  }
 })
 
 ipcMain.handle('db:updateSettings', async (event, data) => {
-  // TODO: PUT to FastAPI /settings
-  console.log('Update Settings:', data)
-  return { success: true }
+  try {
+    const promises = []
+    if (data.doctor) promises.push(apiFetch('/api/settings/doctor-profile', { method: 'PUT', body: JSON.stringify(data.doctor) }))
+    if (data.clinic) promises.push(apiFetch('/api/settings/clinic', { method: 'PUT', body: JSON.stringify(data.clinic) }))
+    if (data.security) promises.push(apiFetch('/api/settings/security', { method: 'PUT', body: JSON.stringify(data.security) }))
+    await Promise.all(promises)
+    return { success: true }
+  } catch (err) {
+    console.error('db:updateSettings error:', err.message)
+    return { success: false, error: err.message }
+  }
 })

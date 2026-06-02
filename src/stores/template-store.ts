@@ -2,7 +2,6 @@
 
 import { create } from 'zustand'
 import { Template } from '@/types'
-import { DEMO_TEMPLATES } from '@/lib/constants'
 
 interface TemplateState {
   templates: Template[]
@@ -12,7 +11,7 @@ interface TemplateState {
 }
 
 export const useTemplateStore = create<TemplateState>((set, get) => ({
-  templates: DEMO_TEMPLATES,
+  templates: [],
   selectedTemplate: null,
 
   addTemplate: (templateData) => {

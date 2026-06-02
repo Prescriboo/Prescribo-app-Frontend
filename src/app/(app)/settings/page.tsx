@@ -185,14 +185,14 @@ function MedicineHistoryTab() {
     if (!e) return
     setEditingId(id); setName(e.name); setFileName(e.fileName || ''); setFileType(e.fileType || 'pdf'); setFileData(e.fileData || ''); setShowModal(true)
   }
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) { addToast('Please enter medicine name', 'error'); return }
     const file = fileName ? { fileName, fileType, fileData } : undefined
     if (editingId) {
-      updateEntry(editingId, name, file)
+      await updateEntry(editingId, name, file)
       addToast('Medicine updated', 'success')
     } else {
-      addEntry(name, file)
+      await addEntry(name, file)
       addToast('Medicine added', 'success')
     }
     setShowModal(false)
@@ -305,19 +305,19 @@ function MasterDataTab() {
     setValue((item as any)[config[activeSubTab].key])
     setShowModal(true)
   }
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!value.trim()) { addToast(`Please enter ${current.label.toLowerCase()}`, 'error'); return }
     if (editingId) {
-      current.update(editingId, value)
+      await current.update(editingId, value)
       addToast(`${current.label} updated`, 'success')
     } else {
-      current.add(value)
+      await current.add(value)
       addToast(`${current.label} added`, 'success')
     }
     setShowModal(false)
   }
-  const handleDelete = (id: number) => {
-    current.delete(id)
+  const handleDelete = async (id: number) => {
+    await current.delete(id)
     addToast(`${current.label} deleted`, 'info')
   }
 
@@ -655,7 +655,7 @@ function LicenseTab({ licenseKey, demoMode, addToast }: any) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500">License Key</label>
-          <Input value={demoMode ? 'DEMO-MODE-XXXX' : licenseKey || 'PR-ABCD-1234-EFGH'} readOnly className="bg-slate-50 text-slate-500" />
+          <Input value={demoMode ? 'DEMO-MODE-XXXX' : licenseKey || ''} readOnly className="bg-slate-50 text-slate-500" />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500">Plan</label>

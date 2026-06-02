@@ -24,9 +24,9 @@ export default function PatientsPage() {
     ? patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.phone.includes(search))
     : patients
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim()) { addToast('Please enter patient name', 'error'); return }
-    addPatient({
+    await addPatient({
       name: form.name,
       age: form.age || '-',
       gender: form.gender || '-',
@@ -77,23 +77,27 @@ export default function PatientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-all">
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{p.name}</strong></td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.age} / {p.gender}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.phone}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.lastVisit}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">
-                    <Badge variant={p.status === 'Active' ? 'success' : 'warning'}>{p.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3.5 text-sm border-b border-slate-50">
-                    <div className="flex gap-1">
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/patients/${p.id}`)}><Eye className="w-4 h-4" /></button>
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?patient=${p.id}`)}><FilePlus className="w-4 h-4" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">No patients found. Click "Add Patient" to create one.</td></tr>
+              ) : (
+                filtered.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-all">
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{p.name}</strong></td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.age} / {p.gender}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.phone}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.lastVisit}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">
+                      <Badge variant={p.status === 'Active' ? 'success' : 'warning'}>{p.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">
+                      <div className="flex gap-1">
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/patients/${p.id}`)}><Eye className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?patient=${p.id}`)}><FilePlus className="w-4 h-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

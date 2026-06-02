@@ -15,11 +15,7 @@ interface PatientHistoryState {
 export const usePatientHistoryStore = create<PatientHistoryState>()(
   persist(
     (set, get) => ({
-      entries: [
-        { id: 1, patientName: 'Rajesh Kumar', medicineName: 'Amoxicillin', dosageId: 2, frequencyId: 3, durationId: 4, date: '2026-05-24', diagnosis: 'Upper Respiratory Tract Infection', notes: 'Complete full course', createdAt: '2026-05-24' },
-        { id: 2, patientName: 'Priya Sharma', medicineName: 'Metformin', dosageId: 2, frequencyId: 2, durationId: 7, date: '2026-05-23', diagnosis: 'Type 2 Diabetes Follow-up', notes: 'Monitor blood sugar', createdAt: '2026-05-23' },
-        { id: 3, patientName: 'Amit Patel', medicineName: 'Cetirizine', dosageId: 6, frequencyId: 1, durationId: 4, date: '2026-05-22', diagnosis: 'Allergic Rhinitis', notes: 'Take at bedtime', createdAt: '2026-05-22' },
-      ],
+      entries: [],
 
       addEntry: (entryData) => {
         const newEntry: PatientHistoryEntry = {

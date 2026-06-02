@@ -3,58 +3,70 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Complaint } from '@/types'
+import { autocompleteApi } from '@/lib/api'
 
 interface ComplaintState {
   items: Complaint[]
-  addItem: (complaint: string) => void
-  updateItem: (id: number, complaint: string) => void
-  deleteItem: (id: number) => void
+  _apiAvailable: boolean
+  setApiAvailable: (available: boolean) => void
+  addItem: (complaint: string) => Promise<void>
+  updateItem: (id: number, complaint: string) => Promise<void>
+  deleteItem: (id: number) => Promise<void>
   getComplaintById: (id: number) => string
+  syncFromApi: (apiItems: { id: number; chief_complaints: string }[]) => void
 }
 
 export const useComplaintStore = create<ComplaintState>()(
   persist(
     (set, get) => ({
-      items: [
-        { id: 1, complaint: 'Fever' },
-        { id: 2, complaint: 'Cough' },
-        { id: 3, complaint: 'Cold' },
-        { id: 4, complaint: 'Headache' },
-        { id: 5, complaint: 'Body ache' },
-        { id: 6, complaint: 'Sore throat' },
-        { id: 7, complaint: 'Chest pain' },
-        { id: 8, complaint: 'Shortness of breath' },
-        { id: 9, complaint: 'Abdominal pain' },
-        { id: 10, complaint: 'Nausea / Vomiting' },
-        { id: 11, complaint: 'Diarrhoea' },
-        { id: 12, complaint: 'Constipation' },
-      ],
+      items: [],
+      _apiAvailable: false,
 
-      addItem: (complaint) => {
+      setApiAvailable: (available) => set({ _apiAvailable: available }),
+
+      addItem: async (complaint) => {
         if (!complaint.trim()) return
+        const state = get()
         const newItem: Complaint = {
-          id: get().items.length + 1,
+          id: state.items.length + 1,
           complaint: complaint.trim(),
         }
-        set((state) => ({ items: [...state.items, newItem] }))
+
+        if (state._apiAvailable) {
+          try {
+            const created = await autocompleteApi.createChiefComplaint(complaint.trim())
+            set((s) => ({ items: [...s.items, { id: created.id, complaint: created.chief_complaints }] }))
+            return
+          } catch (e: any) {
+            console.warn('API createChiefComplaint failed, falling back to local:', e.message)
+          }
+        }
+
+        set((s) => ({ items: [...s.items, newItem] }))
       },
 
-      updateItem: (id, complaint) => {
+      updateItem: async (id, complaint) => {
         if (!complaint.trim()) return
-        set((state) => ({
-          items: state.items.map((item) => (item.id === id ? { ...item, complaint: complaint.trim() } : item)),
+        const state = get()
+        set((s) => ({
+          items: s.items.map((item) => (item.id === id ? { ...item, complaint: complaint.trim() } : item)),
         }))
       },
 
-      deleteItem: (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+      deleteItem: async (id) => {
+        const state = get()
+        set((s) => ({
+          items: s.items.filter((item) => item.id !== id),
         }))
       },
 
       getComplaintById: (id) => {
         const item = get().items.find((i) => i.id === id)
         return item?.complaint || ''
+      },
+
+      syncFromApi: (apiItems) => {
+        set({ items: (apiItems || []).map((c) => ({ id: c.id, complaint: c.chief_complaints })) })
       },
     }),
     {

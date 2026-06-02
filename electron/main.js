@@ -4,12 +4,16 @@ const fs = require('fs')
 const os = require('os')
 
 // IPC Handlers
+require('./ipc-handlers/api')
 require('./ipc-handlers/database')
 require('./ipc-handlers/print')
 require('./ipc-handlers/export')
 require('./ipc-handlers/license')
 require('./ipc-handlers/backup')
 require('./ipc-handlers/fs')
+
+const { startBackend, stopBackend } = require('./backend-spawner')
+const { setBackendUrl } = require('./ipc-handlers/api')
 
 let mainWindow
 let splashWindow
@@ -224,8 +228,21 @@ function createMainWindow() {
 }
 
 // ===================== APP LIFECYCLE =====================
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createSplashWindow()
+
+  // Start Python backend in production; in dev it may already be running
+  if (!isDev) {
+    const appDir = path.dirname(__dirname)
+    const port = await startBackend(appDir)
+    if (port) {
+      setBackendUrl(`http://127.0.0.1:${port}`)
+    }
+  } else {
+    // In dev, assume backend is on default port or set by env
+    setBackendUrl(process.env.API_URL || 'http://localhost:8000')
+  }
+
   setTimeout(createMainWindow, 800)
 })
 
@@ -242,6 +259,7 @@ app.on('activate', () => {
 // macOS: hide instead of quit
 app.on('before-quit', () => {
   saveWindowState()
+  stopBackend()
 })
 
 // Single instance lock
