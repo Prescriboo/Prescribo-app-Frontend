@@ -50,7 +50,16 @@ function mapApiPrescription(r: any): Prescription {
       inst: m.instructions || '',
     })),
     doctor: r.doctor_name || '',
-    updateHistory: [] as { date: string; medicines: MedicineRow[] }[],
+    updateHistory: (r.update_history || []).map((h: any) => ({
+      date: h.date,
+      medicines: (h.medicines || []).map((m: any) => ({
+        name: m.name || m.medicine_name || '',
+        dose: m.dose || m.dosage || '',
+        freq: m.freq || m.frequency || '',
+        dur: m.dur || m.duration || '',
+        inst: m.inst || m.instructions || '',
+      })),
+    })),
   }
 }
 
@@ -117,6 +126,8 @@ export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
       updatePrescription: async (id, addedMedicines, allMedicines, newDate) => {
         const state = get()
         const existing = state.prescriptions.find((r) => r.id === id)
+        const newHistoryEntry = { date: newDate, medicines: addedMedicines }
+        const updatedHistory = [...(existing?.updateHistory || []), newHistoryEntry]
 
         if (state._apiAvailable && existing) {
           try {
@@ -130,6 +141,16 @@ export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
                 instructions: m.inst,
                 display_order: i,
               })),
+              update_history: updatedHistory.map((h) => ({
+                date: h.date,
+                medicines: h.medicines.map((m) => ({
+                  name: m.name,
+                  dose: m.dose,
+                  freq: m.freq,
+                  dur: m.dur,
+                  inst: m.inst,
+                })),
+              })),
             })
           } catch (e: any) {
             console.warn('API updatePrescription failed, falling back to local:', e.message)
@@ -139,11 +160,10 @@ export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
         set((s) => ({
           prescriptions: s.prescriptions.map((r) => {
             if (r.id !== id) return r
-            const history = r.updateHistory || []
             return {
               ...r,
               date: newDate,
-              updateHistory: [...history, { date: newDate, medicines: addedMedicines }],
+              updateHistory: updatedHistory,
             }
           }),
         }))

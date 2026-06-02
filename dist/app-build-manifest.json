@@ -21,20 +21,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/history/page.js"
     ],
-    "/(app)/settings/page": [
+    "/(app)/patients/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(app)/settings/page.js"
+      "static/chunks/app/(app)/patients/page.js"
     ],
     "/(app)/templates/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/templates/page.js"
     ],
-    "/(app)/patients/page": [
+    "/(app)/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(app)/patients/page.js"
+      "static/chunks/app/(app)/settings/page.js"
     ],
     "/(app)/dashboard/page": [
       "static/chunks/webpack.js",

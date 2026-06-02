@@ -113,6 +113,7 @@ export interface PrescriptionCreate {
   template_used?: string
   status?: string
   paper_size?: string
+  update_history?: { date: string; medicines: any[] }[]
   medicine_rows: PrescriptionMedicineRow[]
 }
 
@@ -132,6 +133,7 @@ export interface ApiPrescription {
   follow_up_date?: string
   follow_up_notes?: string
   template_id?: number
+  update_history?: { date: string; medicines: any[] }[]
   template_used?: string
   status?: string
   is_deleted?: boolean

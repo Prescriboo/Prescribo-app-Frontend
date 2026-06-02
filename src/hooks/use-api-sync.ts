@@ -58,7 +58,16 @@ function mapApiPrescription(r: any) {
       inst: m.instructions || '',
     })),
     doctor: r.doctor_name || '',
-    updateHistory: [] as { date: string; medicines: any[] }[],
+    updateHistory: (r.update_history || []).map((h: any) => ({
+      date: h.date,
+      medicines: (h.medicines || []).map((m: any) => ({
+        name: m.name || m.medicine_name || '',
+        dose: m.dose || m.dosage || '',
+        freq: m.freq || m.frequency || '',
+        dur: m.dur || m.duration || '',
+        inst: m.inst || m.instructions || '',
+      })),
+    })),
   }
 }
 
