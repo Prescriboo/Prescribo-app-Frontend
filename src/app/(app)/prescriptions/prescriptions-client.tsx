@@ -106,7 +106,7 @@ export default function PrescriptionsClientPage() {
         setCurrentRx({
           patientName: rx.patientName,
           patientAge: p ? `${p.age} / ${p.gender}` : '',
-          patientPlace: '',
+          patientPlace: p?.place || '',
           date: new Date().toISOString().split('T')[0],
           complaint: '',
           diagnosis: rx.diagnosis,
@@ -126,7 +126,7 @@ export default function PrescriptionsClientPage() {
         setCurrentRx({
           patientName: p.name,
           patientAge: `${p.age} / ${p.gender}`,
-          patientPlace: '',
+          patientPlace: p.place,
         })
       }
     }
@@ -157,11 +157,12 @@ export default function PrescriptionsClientPage() {
 
     let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
     if (!p) {
+      const ageParts = currentRx.patientAge.split('/').map(s => s.trim())
       p = await addPatient({
         name: currentRx.patientName,
-        age: '-',
-        gender: '-',
-        phone: '-',
+        age: ageParts[0] || '-',
+        gender: ageParts[1] || '-',
+        place: currentRx.patientPlace || '-',
         email: '',
         allergies: '',
         conditions: '',
@@ -203,6 +204,7 @@ export default function PrescriptionsClientPage() {
   if (viewMode && viewRx) {
     const history = viewRx.updateHistory || []
     const originalCount = viewRx.medicines.length
+    const viewPatient = getPatient(viewRx.patientId)
 
     return (
       <div className="flex h-full">
@@ -255,6 +257,10 @@ export default function PrescriptionsClientPage() {
               <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
                 <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Name:</span> <span className="font-medium">{viewRx.patientName}</span></div>
                 <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Date:</span> <span className="font-medium">{viewRx.date}</span></div>
+              </div>
+              <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
+                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age / Gender:</span> <span className="font-medium">{viewPatient ? `${viewPatient.age} / ${viewPatient.gender}` : '-'}</span></div>
+                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{viewPatient?.place || '-'}</span></div>
               </div>
               <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
                 <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Doctor:</span> <span className="font-medium">{viewRx.doctor}</span></div>

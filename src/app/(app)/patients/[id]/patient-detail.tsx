@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Modal } from '@/components/ui/modal'
 import { getInitials } from '@/lib/utils'
 import { Plus, ArrowLeft, Trash2 } from 'lucide-react'
 
@@ -15,6 +17,7 @@ export default function PatientDetailPage() {
   const { getPatient } = usePatientStore()
   const { getPatientPrescriptions, deletePrescription } = usePrescriptionStore()
   const { addToast } = useUIStore()
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const patient = getPatient(Number(params.id))
   if (!patient) return <div className="p-6">Patient not found</div>
@@ -32,7 +35,7 @@ export default function PatientDetailPage() {
           {getInitials(patient.name)}
         </div>
         <div className="text-lg font-bold mb-1">{patient.name}</div>
-        <div className="text-sm text-slate-400 leading-relaxed mb-5">{patient.age} yrs {patient.gender}<br/>{patient.phone}</div>
+        <div className="text-sm text-slate-400 leading-relaxed mb-5">{patient.age} yrs {patient.gender}<br/>{patient.place}</div>
         <div className="grid grid-cols-2 gap-3 w-full mb-5">
           <div className="bg-bg p-3.5 rounded-lg border border-border">
             <div className="text-2xl font-extrabold text-primary">{patient.visits}</div>
@@ -81,11 +84,9 @@ export default function PatientDetailPage() {
                 </div>
                 <button
                   className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold text-white bg-danger hover:bg-red-600 transition-all flex-shrink-0 ml-2 shadow-sm"
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation()
-                    if (!window.confirm('Delete this prescription?')) return
-                    await deletePrescription(rx.id)
-                    addToast('Prescription deleted', 'info')
+                    setDeleteId(rx.id)
                   }}
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -104,6 +105,25 @@ export default function PatientDetailPage() {
           ))}
         </div>
       </div>
+
+      <Modal
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        title="Delete Prescription"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={async () => {
+              if (deleteId == null) return
+              await deletePrescription(deleteId)
+              addToast('Prescription deleted', 'info')
+              setDeleteId(null)
+            }}>Delete</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">Are you sure you want to delete this prescription? This action cannot be undone.</p>
+      </Modal>
     </div>
   )
 }

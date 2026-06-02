@@ -53,7 +53,7 @@ export function TopBar() {
                     onClick={() => { router.push(`/patients/${p.id}`); setSearch(''); setShowResults(false) }}
                   >
                     <div className="font-semibold">{p.name}</div>
-                    <div className="text-xs text-slate-400">{p.age} yrs {p.gender} | {p.phone}</div>
+                    <div className="text-xs text-slate-400">{p.age} yrs {p.gender} | {p.place}</div>
                   </button>
                 ))}
               </>

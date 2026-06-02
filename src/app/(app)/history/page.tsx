@@ -6,6 +6,7 @@ import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Modal } from '@/components/ui/modal'
 import { Download, Eye, RotateCcw, Search, Trash2 } from 'lucide-react'
 
 export default function HistoryPage() {
@@ -13,6 +14,7 @@ export default function HistoryPage() {
   const { prescriptions, deletePrescription } = usePrescriptionStore()
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const filtered = search
     ? prescriptions.filter(r => r.patientName.toLowerCase().includes(search.toLowerCase()) || r.diagnosis.toLowerCase().includes(search.toLowerCase()))
@@ -70,11 +72,7 @@ export default function HistoryPage() {
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?represcribe=${rx.id}`)} title="Represcribe">
                           <RotateCcw className="w-4 h-4" />
                         </button>
-                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={async () => {
-                          if (!window.confirm('Delete this prescription?')) return
-                          await deletePrescription(rx.id)
-                          addToast('Prescription deleted', 'info')
-                        }}>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={() => setDeleteId(rx.id)}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -86,6 +84,25 @@ export default function HistoryPage() {
           </table>
         </div>
       </div>
+
+      <Modal
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        title="Delete Prescription"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={async () => {
+              if (deleteId == null) return
+              await deletePrescription(deleteId)
+              addToast('Prescription deleted', 'info')
+              setDeleteId(null)
+            }}>Delete</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">Are you sure you want to delete this prescription? This action cannot be undone.</p>
+      </Modal>
     </div>
   )
 }

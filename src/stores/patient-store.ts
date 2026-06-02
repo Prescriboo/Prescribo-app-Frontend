@@ -23,9 +23,9 @@ function mapApiPatient(p: any): Patient {
   return {
     id: p.id,
     name: p.name,
-    age: p.age || '',
+    age: p.age ?? '',
     gender: p.gender || '',
-    phone: p.phone || '',
+    place: p.address || '',
     email: p.email || '',
     allergies: p.allergies || '',
     conditions: p.chronic_conditions || '',
@@ -64,9 +64,8 @@ export const usePatientStore = create<PatientState>()(
               name: patientData.name,
               age: typeof patientData.age === 'string' ? parseInt(patientData.age) || undefined : patientData.age,
               gender: patientData.gender,
-              phone: patientData.phone,
+              address: patientData.place,
               email: patientData.email,
-              address: '',
               allergies: patientData.allergies,
               chronic_conditions: patientData.conditions,
               status: 'Active',
@@ -92,7 +91,7 @@ export const usePatientStore = create<PatientState>()(
               name: data.name,
               age: typeof data.age === 'string' ? parseInt(data.age) || undefined : data.age,
               gender: data.gender,
-              phone: data.phone,
+              address: data.place,
               email: data.email,
               allergies: data.allergies,
               chronic_conditions: data.conditions,
@@ -131,7 +130,7 @@ export const usePatientStore = create<PatientState>()(
       searchPatients: (query) => {
         const term = query.toLowerCase()
         return get().patients.filter(
-          (p) => p.name.toLowerCase().includes(term) || p.phone.includes(term)
+          (p) => p.name.toLowerCase().includes(term) || p.place.includes(term)
         )
       },
 

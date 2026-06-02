@@ -16,12 +16,20 @@ export default function PatientsPage() {
   const { addToast } = useUIStore()
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
   const [form, setForm] = useState({
-    name: '', age: '', gender: '', phone: '', email: '', allergies: '', conditions: ''
+    name: '', age: '', gender: '', place: '', email: '', allergies: '', conditions: ''
   })
 
+  const handleDeleteConfirm = async () => {
+    if (deleteId == null) return
+    await deletePatient(deleteId)
+    addToast('Patient deleted', 'info')
+    setDeleteId(null)
+  }
+
   const filtered = search
-    ? patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.phone.includes(search))
+    ? patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.place.includes(search))
     : patients
 
   const handleAdd = async () => {
@@ -30,14 +38,14 @@ export default function PatientsPage() {
       name: form.name,
       age: form.age || '-',
       gender: form.gender || '-',
-      phone: form.phone || '-',
+      place: form.place || '-',
       email: form.email,
       allergies: form.allergies,
       conditions: form.conditions,
     })
     addToast('Patient added successfully', 'success')
     setShowModal(false)
-    setForm({ name: '', age: '', gender: '', phone: '', email: '', allergies: '', conditions: '' })
+    setForm({ name: '', age: '', gender: '', place: '', email: '', allergies: '', conditions: '' })
   }
 
   return (
@@ -70,7 +78,7 @@ export default function PatientsPage() {
               <tr className="bg-bg">
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Patient</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Age / Gender</th>
-                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Phone</th>
+                <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Place</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Last Visit</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Status</th>
                 <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Actions</th>
@@ -84,7 +92,7 @@ export default function PatientsPage() {
                   <tr key={p.id} className="hover:bg-slate-50 transition-all">
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50"><strong>{p.name}</strong></td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.age} / {p.gender}</td>
-                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.phone}</td>
+                    <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.place}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">{p.lastVisit}</td>
                     <td className="px-4 py-3.5 text-sm border-b border-slate-50">
                       <Badge variant={p.status === 'Active' ? 'success' : 'warning'}>{p.status}</Badge>
@@ -93,11 +101,7 @@ export default function PatientsPage() {
                       <div className="flex gap-1">
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/patients/${p.id}`)}><Eye className="w-4 h-4" /></button>
                         <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => router.push(`/prescriptions?patient=${p.id}`)}><FilePlus className="w-4 h-4" /></button>
-                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={async () => {
-                          if (!window.confirm('Delete this patient?')) return
-                          await deletePatient(p.id)
-                          addToast('Patient deleted', 'info')
-                        }}><Trash2 className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" title="Delete" onClick={() => setDeleteId(p.id)}><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -137,8 +141,8 @@ export default function PatientsPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Phone</label>
-            <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+91 ..." />
+            <label className="text-xs font-semibold text-slate-500">Place</label>
+            <Input value={form.place} onChange={e => setForm({...form, place: e.target.value})} placeholder="e.g. Mumbai" />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-500">Email</label>
@@ -153,6 +157,20 @@ export default function PatientsPage() {
             <Input value={form.conditions} onChange={e => setForm({...form, conditions: e.target.value})} placeholder="e.g. Diabetes, Hypertension" />
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        title="Delete Patient"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteConfirm}>Delete</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">Are you sure you want to delete this patient? This action cannot be undone.</p>
       </Modal>
     </div>
   )

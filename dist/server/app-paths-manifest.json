@@ -1,3 +1,4 @@
 {
-  "/(app)/patients/page": "app/(app)/patients/page.js"
+  "/(app)/templates/page": "app/(app)/templates/page.js",
+  "/(app)/prescriptions/page": "app/(app)/prescriptions/page.js"
 }

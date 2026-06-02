@@ -26,9 +26,9 @@ function mapApiPatient(p: any) {
   return {
     id: p.id,
     name: p.name,
-    age: p.age || '',
+    age: p.age ?? '',
     gender: p.gender || '',
-    phone: p.phone || '',
+    place: p.address || '',
     email: p.email || '',
     allergies: p.allergies || '',
     conditions: p.chronic_conditions || '',
