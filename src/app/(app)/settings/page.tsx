@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
 import { useDosageFrequencyStore } from '@/stores/dosage-frequency-store'
 import { usePatientHistoryStore } from '@/stores/patient-history-store'
+import { usePatientStore } from '@/stores/patient-store'
 import { useDosageStore } from '@/stores/dosage-store'
 import { useFrequencyStore } from '@/stores/frequency-store'
 import { useDurationStore } from '@/stores/duration-store'
@@ -595,7 +596,8 @@ function MasterDataTab() {
 
 /* ===================== PATIENT HISTORY TAB (with dropdowns) ===================== */
 function PatientHistoryTab() {
-  const { entries, addEntry, updateEntry, deleteEntry, searchEntries } = usePatientHistoryStore()
+  const { entries, addEntry, updateEntry, deleteEntry, searchEntries, syncFromApi } = usePatientHistoryStore()
+  const { patients } = usePatientStore()
   const { items: dosages } = useDosageStore()
   const { items: frequencies } = useFrequencyStore()
   const { items: durations } = useDurationStore()
@@ -603,35 +605,74 @@ function PatientHistoryTab() {
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [form, setForm] = useState({ patientName: '', medicineName: '', dosageId: 0, frequencyId: 0, durationId: 0, date: '', diagnosis: '', notes: '' })
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [form, setForm] = useState({ patientId: 0, medicineName: '', dosageId: 0, frequencyId: 0, durationId: 0, date: '', diagnosis: '', notes: '' })
 
   const filtered = search ? searchEntries(search) : entries
 
+  // Resolve patient name for API-loaded entries that don't have patientName cached
+  const getPatientName = (entry: typeof entries[0]) => {
+    if (entry.patientName) return entry.patientName
+    const p = patients.find((pt) => pt.id === entry.patient_id)
+    return p?.name || `Patient #${entry.patient_id}`
+  }
+
+  const getLabel = (items: any[], id: number, key: string) => {
+    const item = items.find(i => i.id === id)
+    return item ? (item as any)[key] : '-'
+  }
+
   const openAdd = () => {
     setEditingId(null)
-    setForm({ patientName: '', medicineName: '', dosageId: dosages[0]?.id || 0, frequencyId: frequencies[0]?.id || 0, durationId: durations[0]?.id || 0, date: new Date().toISOString().split('T')[0], diagnosis: '', notes: '' })
+    setForm({ patientId: patients[0]?.id || 0, medicineName: '', dosageId: dosages[0]?.id || 0, frequencyId: frequencies[0]?.id || 0, durationId: durations[0]?.id || 0, date: new Date().toISOString().split('T')[0], diagnosis: '', notes: '' })
     setShowModal(true)
   }
   const openEdit = (id: number) => {
     const e = entries.find(x => x.id === id)
     if (!e) return
     setEditingId(id)
-    setForm({ patientName: e.patientName, medicineName: e.medicineName, dosageId: e.dosageId, frequencyId: e.frequencyId, durationId: e.durationId, date: e.date, diagnosis: e.diagnosis, notes: e.notes || '' })
+    setForm({ patientId: e.patient_id || patients.find(p => p.name === e.patientName)?.id || 0, medicineName: e.medicineName, dosageId: e.dosageId, frequencyId: e.frequencyId, durationId: e.durationId, date: e.date, diagnosis: e.diagnosis, notes: e.notes || '' })
     setShowModal(true)
   }
-  const handleSave = () => {
-    if (!form.patientName.trim()) { addToast('Please enter patient name', 'error'); return }
+  const handleSave = async () => {
+    const patient = patients.find(p => p.id === form.patientId)
+    if (!patient) { addToast('Please select a patient', 'error'); return }
     if (!form.medicineName.trim()) { addToast('Please enter medicine name', 'error'); return }
     if (!form.date.trim()) { addToast('Please enter date', 'error'); return }
-    if (editingId) { updateEntry(editingId, { ...form }); addToast('Patient history updated', 'success') }
-    else { addEntry({ ...form }); addToast('Patient history added', 'success') }
+
+    const dosageText = getLabel(dosages, form.dosageId, 'dosage')
+    const frequencyText = getLabel(frequencies, form.frequencyId, 'frequency')
+    const durationText = getLabel(durations, form.durationId, 'duration')
+
+    const payload = {
+      patient_id: patient.id,
+      patientName: patient.name,
+      medicineName: form.medicineName.trim(),
+      dosageId: form.dosageId,
+      frequencyId: form.frequencyId,
+      durationId: form.durationId,
+      dosage: dosageText,
+      frequency: frequencyText,
+      duration: durationText,
+      date: form.date,
+      diagnosis: form.diagnosis,
+      notes: form.notes,
+    }
+
+    if (editingId) {
+      await updateEntry(editingId, payload)
+      addToast('Patient history updated', 'success')
+    } else {
+      await addEntry(payload)
+      addToast('Patient history added', 'success')
+    }
     setShowModal(false)
   }
-  const handleDelete = (id: number) => { deleteEntry(id); addToast('Patient history deleted', 'info') }
-
-  const getLabel = (items: any[], id: number, key: string) => {
-    const item = items.find(i => i.id === id)
-    return item ? (item as any)[key] : '-'
+  const handleDeleteConfirm = async () => {
+    if (deleteId == null) return
+    await deleteEntry(deleteId)
+    addToast('Patient history deleted', 'info')
+    setDeleteId(null)
   }
 
   return (
@@ -662,17 +703,17 @@ function PatientHistoryTab() {
           <tbody>
             {filtered.length > 0 ? filtered.map(e => (
               <tr key={e.id} className="hover:bg-slate-50 transition-all">
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{e.patientName}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{getPatientName(e)}</td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50">{e.medicineName}</td>
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{getLabel(dosages, e.dosageId, 'dosage')}</td>
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{getLabel(frequencies, e.frequencyId, 'frequency')}</td>
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{getLabel(durations, e.durationId, 'duration')}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{e.dosage || getLabel(dosages, e.dosageId, 'dosage')}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{e.frequency || getLabel(frequencies, e.frequencyId, 'frequency')}</td>
+                <td className="px-4 py-3.5 text-sm border-b border-slate-50">{e.duration || getLabel(durations, e.durationId, 'duration')}</td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50 text-slate-500">{e.date}</td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50 max-w-[140px] truncate">{e.diagnosis}</td>
                 <td className="px-4 py-3.5 text-sm border-b border-slate-50">
                   <div className="flex gap-1">
                     <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => openEdit(e.id)} title="Edit"><Pencil className="w-4 h-4" /></button>
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => handleDelete(e.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => setDeleteId(e.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
               </tr>
@@ -685,7 +726,12 @@ function PatientHistoryTab() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Edit Patient History' : 'Add Patient History'} footer={<><Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button><Button onClick={handleSave}>{editingId ? 'Update' : 'Save'}</Button></>}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5"><label className="text-xs font-semibold text-slate-500">Patient Name *</label><Input value={form.patientName} onChange={(e) => setForm({...form, patientName: e.target.value})} placeholder="e.g. Rajesh Kumar" /></div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-500">Patient *</label>
+              <select className="flex w-full rounded-md border border-border bg-white px-3.5 py-2.5 text-sm shadow-sm focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary-100" value={form.patientId} onChange={(e) => setForm({...form, patientId: Number(e.target.value)})}>
+                {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
             <div className="flex flex-col gap-1.5"><label className="text-xs font-semibold text-slate-500">Date *</label><Input type="date" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} /></div>
           </div>
           <div className="flex flex-col gap-1.5"><label className="text-xs font-semibold text-slate-500">Medicine Name *</label><Input value={form.medicineName} onChange={(e) => setForm({...form, medicineName: e.target.value})} placeholder="e.g. Amoxicillin" /></div>
@@ -712,6 +758,14 @@ function PatientHistoryTab() {
           <div className="flex flex-col gap-1.5"><label className="text-xs font-semibold text-slate-500">Diagnosis</label><Input value={form.diagnosis} onChange={(e) => setForm({...form, diagnosis: e.target.value})} placeholder="e.g. Upper Respiratory Tract Infection" /></div>
           <div className="flex flex-col gap-1.5"><label className="text-xs font-semibold text-slate-500">Notes</label><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Additional notes..." rows={3} /></div>
         </div>
+      </Modal>
+      <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete Patient History" footer={
+        <>
+          <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+          <Button variant="danger" onClick={handleDeleteConfirm}>Delete</Button>
+        </>
+      }>
+        <p className="text-sm text-slate-600">Are you sure you want to delete this patient history record? This action cannot be undone.</p>
       </Modal>
     </div>
   )

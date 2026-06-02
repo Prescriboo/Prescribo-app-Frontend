@@ -2,12 +2,12 @@
   "/_not-found/page": "/_not-found",
   "/page": "/",
   "/(app)/history/page": "/history",
+  "/(app)/dashboard/page": "/dashboard",
+  "/(app)/templates/page": "/templates",
+  "/(app)/settings/page": "/settings",
   "/(app)/prescriptions/page": "/prescriptions",
   "/(app)/patients/page": "/patients",
-  "/(app)/settings/page": "/settings",
-  "/(app)/dashboard/page": "/dashboard",
   "/(auth)/activate/page": "/activate",
   "/(auth)/pin/page": "/pin",
-  "/(app)/templates/page": "/templates",
   "/(app)/patients/[id]/page": "/patients/[id]"
 }

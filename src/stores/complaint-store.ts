@@ -45,6 +45,15 @@ export const useComplaintStore = create<ComplaintState>((set, get) => ({
       updateItem: async (id, complaint) => {
         if (!complaint.trim()) return
         const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.updateChiefComplaint(id, complaint.trim())
+          } catch (e: any) {
+            console.warn('API updateChiefComplaint failed, falling back to local:', e.message)
+          }
+        }
+
         set((s) => ({
           items: s.items.map((item) => (item.id === id ? { ...item, complaint: complaint.trim() } : item)),
         }))
@@ -52,6 +61,15 @@ export const useComplaintStore = create<ComplaintState>((set, get) => ({
 
       deleteItem: async (id) => {
         const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.deleteChiefComplaint(id)
+          } catch (e: any) {
+            console.warn('API deleteChiefComplaint failed, falling back to local:', e.message)
+          }
+        }
+
         set((s) => ({
           items: s.items.filter((item) => item.id !== id),
         }))
@@ -59,10 +77,12 @@ export const useComplaintStore = create<ComplaintState>((set, get) => ({
 
       getComplaintById: (id) => {
         const item = get().items.find((i) => i.id === id)
-        return item?.complaint || ''
+        return item ? item.complaint : ''
       },
 
       syncFromApi: (apiItems) => {
-        set({ items: (apiItems || []).map((c) => ({ id: c.id, complaint: c.chief_complaints })) })
+        set({
+          items: (apiItems || []).map((c) => ({ id: c.id, complaint: c.chief_complaints })),
+        })
       },
     }))

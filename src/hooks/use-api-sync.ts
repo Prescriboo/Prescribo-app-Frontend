@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { checkApiHealth, isElectron, setApiBaseUrl, getApiBaseUrl } from '@/lib/api-config'
-import { patientsApi, prescriptionsApi, settingsApi, autocompleteApi, mastersApi } from '@/lib/api'
+import { patientsApi, prescriptionsApi, settingsApi, autocompleteApi, mastersApi, patientHistoryApi } from '@/lib/api'
 import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useSettingsStore } from '@/stores/settings-store'
@@ -12,6 +12,8 @@ import { useDurationStore } from '@/stores/duration-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
 import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
+import { usePatientHistoryStore } from '@/stores/patient-history-store'
+import { useDosageFrequencyStore } from '@/stores/dosage-frequency-store'
 
 export type ApiConnectionStatus = 'checking' | 'connected' | 'disconnected'
 
@@ -55,7 +57,7 @@ function mapApiPrescription(r: any) {
       dur: m.duration || '',
       inst: m.instructions || '',
     })),
-    doctor: '',
+    doctor: r.doctor_name || '',
     updateHistory: [] as { date: string; medicines: any[] }[],
   }
 }
@@ -77,6 +79,8 @@ export function useApiSync(): UseApiSyncReturn {
     useMedicineHistoryStore.setState({ _apiAvailable: available })
     useComplaintStore.setState({ _apiAvailable: available })
     useDiagnosisStore.setState({ _apiAvailable: available })
+    usePatientHistoryStore.setState({ _apiAvailable: available })
+    useDosageFrequencyStore.setState({ _apiAvailable: available })
   }, [])
 
   const doSync = useCallback(async () => {
@@ -184,6 +188,22 @@ export function useApiSync(): UseApiSyncReturn {
         })
       } catch (e: any) {
         console.warn('Sync autocomplete failed:', e.message)
+      }
+
+      // Sync patient history
+      try {
+        const history = await patientHistoryApi.list()
+        usePatientHistoryStore.getState().syncFromApi(history || [])
+      } catch (e: any) {
+        console.warn('Sync patient history failed:', e.message)
+      }
+
+      // Sync dosage-frequency entries
+      try {
+        const df = await mastersApi.dosageFrequency.list()
+        useDosageFrequencyStore.getState().syncFromApi(df || [])
+      } catch (e: any) {
+        console.warn('Sync dosage-frequency failed:', e.message)
       }
     } catch (err: any) {
       setStatus('disconnected')

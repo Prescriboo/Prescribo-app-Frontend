@@ -346,10 +346,18 @@ export const autocompleteApi = {
     get<{ id: number; chief_complaints: string }[]>(`/api/autocomplete/chief-complaints${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   createChiefComplaint: (text: string) =>
     post<{ id: number; chief_complaints: string }>('/api/autocomplete/chief-complaints', { chief_complaints: text }),
+  updateChiefComplaint: (id: number, text: string) =>
+    put<{ id: number; chief_complaints: string }>(`/api/autocomplete/chief-complaints/${id}`, { chief_complaints: text }),
+  deleteChiefComplaint: (id: number) =>
+    del<{ message: string }>(`/api/autocomplete/chief-complaints/${id}`),
   diagnosis: (search?: string) =>
     get<{ id: number; diagnosis: string }[]>(`/api/autocomplete/diagnosis${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   createDiagnosis: (text: string) =>
     post<{ id: number; diagnosis: string }>('/api/autocomplete/diagnosis', { diagnosis: text }),
+  updateDiagnosis: (id: number, text: string) =>
+    put<{ id: number; diagnosis: string }>(`/api/autocomplete/diagnosis/${id}`, { diagnosis: text }),
+  deleteDiagnosis: (id: number) =>
+    del<{ message: string }>(`/api/autocomplete/diagnosis/${id}`),
 }
 
 // ============================================================
@@ -381,6 +389,15 @@ export const mastersApi = {
     create: (name: string) => post<MedicineNameItem>('/api/masters/medicine-names', { name }),
     update: (id: number, name: string) => put<MedicineNameItem>(`/api/masters/medicine-names/${id}`, { name }),
     remove: (id: number) => del<{ message: string }>(`/api/masters/medicine-names/${id}`),
+  },
+  dosageFrequency: {
+    list: (search?: string) =>
+      get<{ id: number; medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string; created_at?: string; dosage?: string; frequency?: string; duration?: string }[]>(`/api/masters/dosage-frequency${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+    create: (data: { medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string }) =>
+      post<{ id: number; medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string; created_at?: string; dosage?: string; frequency?: string; duration?: string }>('/api/masters/dosage-frequency', data),
+    update: (id: number, data: Partial<{ medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string }>) =>
+      put<{ id: number; medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string; created_at?: string; dosage?: string; frequency?: string; duration?: string }>(`/api/masters/dosage-frequency/${id}`, data),
+    remove: (id: number) => del<{ message: string }>(`/api/masters/dosage-frequency/${id}`),
   },
 }
 
@@ -569,4 +586,9 @@ export const patientHistoryApi = {
     const query = qs.toString()
     return get<PatientHistoryEntry[]>(`/api/patient-history${query ? '?' + query : ''}`)
   },
+  create: (data: Omit<PatientHistoryEntry, 'id'>) =>
+    post<PatientHistoryEntry>('/api/patient-history', data),
+  update: (id: number, data: Partial<PatientHistoryEntry>) =>
+    put<PatientHistoryEntry>(`/api/patient-history/${id}`, data),
+  remove: (id: number) => del<{ message: string }>(`/api/patient-history/${id}`),
 }

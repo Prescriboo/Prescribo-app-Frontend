@@ -49,7 +49,7 @@ function mapApiPrescription(r: any): Prescription {
       dur: m.duration || '',
       inst: m.instructions || '',
     })),
-    doctor: '',
+    doctor: r.doctor_name || '',
     updateHistory: [] as { date: string; medicines: MedicineRow[] }[],
   }
 }

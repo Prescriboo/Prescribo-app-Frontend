@@ -45,6 +45,15 @@ export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
       updateItem: async (id, diagnosis) => {
         if (!diagnosis.trim()) return
         const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.updateDiagnosis(id, diagnosis.trim())
+          } catch (e: any) {
+            console.warn('API updateDiagnosis failed, falling back to local:', e.message)
+          }
+        }
+
         set((s) => ({
           items: s.items.map((item) => (item.id === id ? { ...item, diagnosis: diagnosis.trim() } : item)),
         }))
@@ -52,6 +61,15 @@ export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
 
       deleteItem: async (id) => {
         const state = get()
+
+        if (state._apiAvailable) {
+          try {
+            await autocompleteApi.deleteDiagnosis(id)
+          } catch (e: any) {
+            console.warn('API deleteDiagnosis failed, falling back to local:', e.message)
+          }
+        }
+
         set((s) => ({
           items: s.items.filter((item) => item.id !== id),
         }))
@@ -59,10 +77,12 @@ export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
 
       getDiagnosisById: (id) => {
         const item = get().items.find((i) => i.id === id)
-        return item?.diagnosis || ''
+        return item ? item.diagnosis : ''
       },
 
       syncFromApi: (apiItems) => {
-        set({ items: (apiItems || []).map((d) => ({ id: d.id, diagnosis: d.diagnosis })) })
+        set({
+          items: (apiItems || []).map((d) => ({ id: d.id, diagnosis: d.diagnosis })),
+        })
       },
     }))
