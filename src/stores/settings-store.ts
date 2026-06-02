@@ -10,9 +10,19 @@ const defaultSettings: AppSettings = {
     clinicName: '',
     doctorName: '',
     doctorQual: '',
+    specialization: '',
     regNo: '',
-    address: '',
+    clinicAddressLine1: '',
+    clinicAddressLine2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+    phone: '',
+    email: '',
+    website: '',
     signature: '',
+    defaultLanguage: 'en',
   },
   security: {
     requirePin: false,
@@ -20,6 +30,7 @@ const defaultSettings: AppSettings = {
     encryptData: false,
   },
   templateStyle: 'header-footer',
+  prescriptionFooterHtml: '',
 }
 
 interface SettingsState extends AppSettings {
@@ -28,7 +39,8 @@ interface SettingsState extends AppSettings {
   updateClinic: (data: Partial<AppSettings['clinic']>) => Promise<void>
   updateSecurity: (data: Partial<AppSettings['security']>) => Promise<void>
   updateTemplateStyle: (style: AppSettings['templateStyle']) => void
-  syncFromApi: (doctorProfile: any) => void
+  updatePrescriptionFooterHtml: (html: string) => Promise<void>
+  syncFromApi: (doctorProfile: any, appSettings?: any[]) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -48,9 +60,19 @@ export const useSettingsStore = create<SettingsState>()(
             await settingsApi.doctorProfile.update({
               full_name: updated.doctorName,
               qualifications: updated.doctorQual,
+              specialization: updated.specialization,
               registration_number: updated.regNo,
               clinic_name: updated.clinicName,
-              clinic_address_line1: updated.address,
+              clinic_address_line1: updated.clinicAddressLine1,
+              clinic_address_line2: updated.clinicAddressLine2,
+              city: updated.city,
+              state: updated.state,
+              pincode: updated.pincode,
+              country: updated.country,
+              phone: updated.phone,
+              email: updated.email,
+              website: updated.website,
+              default_language: updated.defaultLanguage,
             })
           } catch (e: any) {
             console.warn('API updateClinic failed, falling back to local:', e.message)
@@ -81,21 +103,50 @@ export const useSettingsStore = create<SettingsState>()(
 
       updateTemplateStyle: (style) => set({ templateStyle: style }),
 
-      syncFromApi: (doctorProfile) => {
-        if (!doctorProfile) return
-        set((state) => ({
-          clinic: {
-            ...state.clinic,
-            clinicName: doctorProfile.clinic_name || state.clinic.clinicName,
-            doctorName: doctorProfile.full_name || state.clinic.doctorName,
-            doctorQual: doctorProfile.qualifications || state.clinic.doctorQual,
-            regNo: doctorProfile.registration_number || state.clinic.regNo,
-            address: [doctorProfile.clinic_address_line1, doctorProfile.clinic_address_line2, doctorProfile.city, doctorProfile.state, doctorProfile.pincode]
-              .filter(Boolean)
-              .join(', ') || state.clinic.address,
-            signature: doctorProfile.full_name || state.clinic.signature,
-          },
-        }))
+      updatePrescriptionFooterHtml: async (html) => {
+        const state = get()
+        if (state._apiAvailable) {
+          try {
+            await settingsApi.app.set('prescription_footer_html', html, 'text')
+          } catch (e: any) {
+            console.warn('API updatePrescriptionFooterHtml failed, falling back to local:', e.message)
+          }
+        }
+        set({ prescriptionFooterHtml: html })
+      },
+
+      syncFromApi: (doctorProfile, appSettings) => {
+        const updates: Partial<SettingsState> = {}
+        if (doctorProfile) {
+          updates.clinic = {
+            ...get().clinic,
+            clinicName: doctorProfile.clinic_name || get().clinic.clinicName,
+            doctorName: doctorProfile.full_name || get().clinic.doctorName,
+            doctorQual: doctorProfile.qualifications || get().clinic.doctorQual,
+            specialization: doctorProfile.specialization || get().clinic.specialization,
+            regNo: doctorProfile.registration_number || get().clinic.regNo,
+            clinicAddressLine1: doctorProfile.clinic_address_line1 || get().clinic.clinicAddressLine1,
+            clinicAddressLine2: doctorProfile.clinic_address_line2 || get().clinic.clinicAddressLine2,
+            city: doctorProfile.city || get().clinic.city,
+            state: doctorProfile.state || get().clinic.state,
+            pincode: doctorProfile.pincode || get().clinic.pincode,
+            country: doctorProfile.country || get().clinic.country,
+            phone: doctorProfile.phone || get().clinic.phone,
+            email: doctorProfile.email || get().clinic.email,
+            website: doctorProfile.website || get().clinic.website,
+            signature: doctorProfile.full_name || get().clinic.signature,
+            defaultLanguage: doctorProfile.default_language || get().clinic.defaultLanguage,
+          }
+        }
+        if (appSettings) {
+          const footerSetting = appSettings.find((s: any) => s.setting_key === 'prescription_footer_html')
+          if (footerSetting) {
+            updates.prescriptionFooterHtml = footerSetting.setting_value || ''
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          set(updates)
+        }
       },
     }),
     {

@@ -12,7 +12,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
-import { usePrescriptionFooterStore } from '@/stores/prescription-footer-store'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -26,8 +26,7 @@ export default function PrescriptionsClientPage() {
   const router = useRouter()
   const { patients, getPatient, addPatient } = usePatientStore()
   const { prescriptions, currentRx, setCurrentRx, addMedicineRow, removeMedicineRow, updateMedicineRow, addPrescription, updatePrescription, resetCurrentRx, setEditingRxId, editingRxId, paperSize, setPaperSize } = usePrescriptionStore()
-  const { clinic, templateStyle } = useSettingsStore()
-  const { items: footerLines } = usePrescriptionFooterStore()
+  const { clinic, templateStyle, prescriptionFooterHtml } = useSettingsStore()
   const { items: dosages } = useDosageStore()
   const { items: frequencies } = useFrequencyStore()
   const { items: durations } = useDurationStore()
@@ -184,6 +183,10 @@ export default function PrescriptionsClientPage() {
   }
 
   const handlePrint = () => {
+    const originalTitle = document.title
+    const patientName = viewMode && viewRx ? viewRx.patientName : currentRx.patientName
+    document.title = patientName ? `${patientName} - Prescription` : 'Prescription'
+
     const style = document.createElement('style')
     style.innerHTML = `
       @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
@@ -195,6 +198,8 @@ export default function PrescriptionsClientPage() {
     document.head.appendChild(style)
     window.print()
     document.head.removeChild(style)
+
+    document.title = originalTitle
   }
 
   const paperClasses = paperSize === 'A4'
@@ -243,15 +248,22 @@ export default function PrescriptionsClientPage() {
 
           {/* Prescription Paper */}
           <div className={cn(
-            "bg-white border border-gray-300 rounded shadow-xl relative print-area",
+            "bg-white border border-gray-300 rounded shadow-xl relative print-area flex flex-col",
             paperClasses
           )}>
             <div className="paper-watermark">PRESCRIBO</div>
 
-            <div className="text-center border-b-[2.5px] border-primary pb-3 mb-3 p-6 pt-8">
+            <div className="flex-1">
+              <div className="text-center border-b-[2.5px] border-primary pb-3 mb-3 p-6 pt-8">
               <div className="text-[1.05rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
               <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
               <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
+              {clinic.specialization && <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.specialization}</div>}
+              {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ') && (
+                <div className="text-[0.7rem] text-slate-500 mt-0.5">
+                  {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ')}
+                </div>
+              )}
             </div>
 
             <div className="text-[0.8rem] leading-relaxed text-slate-900 px-6">
@@ -318,6 +330,7 @@ export default function PrescriptionsClientPage() {
                 })}
               </div>
             </div>
+            </div>
 
             {templateStyle === 'header-footer' && (
               <>
@@ -328,20 +341,16 @@ export default function PrescriptionsClientPage() {
                   </div>
                 </div>
                 <div className="mt-auto pt-3 px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-2 text-center">
-                    <div className="inline-flex flex-col gap-0.5 text-[0.6rem] text-slate-500 leading-relaxed">
-                      {footerLines.map(line => (
-                        <div key={line.id}><span className="font-bold text-slate-700">{line.label}:</span> {line.value}</div>
-                      ))}
-                    </div>
-                  </div>
+                  <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: prescriptionFooterHtml }} />
                 </div>
               </>
             )}
             {templateStyle === 'header-only' && (
-              <div className="absolute bottom-6 right-8 text-center">
-                <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-                <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
+              <div className="mt-auto px-6 pb-6 flex justify-end">
+                <div className="text-center">
+                  <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+                  <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
+                </div>
               </div>
             )}
           </div>
@@ -516,14 +525,21 @@ export default function PrescriptionsClientPage() {
         </div>
 
         <div className={cn(
-          "bg-white border border-gray-300 rounded shadow-xl relative flex-shrink-0 mx-auto",
+          "bg-white border border-gray-300 rounded shadow-xl relative flex-shrink-0 mx-auto flex flex-col",
           paperSize === 'A4' ? 'w-[380px] min-h-[537px]' : 'w-[380px] min-h-[380px]'
         )}>
           <div className="paper-watermark">PRESCRIBO</div>
-          <div className="text-center border-b-[2.5px] border-primary pb-2 mb-2 p-4 pt-5">
+          <div className="flex-1">
+            <div className="text-center border-b-[2.5px] border-primary pb-2 mb-2 p-4 pt-5">
             <div className="text-[0.95rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
             <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
             <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
+            {clinic.specialization && <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.specialization}</div>}
+            {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ') && (
+              <div className="text-[0.7rem] text-slate-500 mt-0.5">
+                {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ')}
+              </div>
+            )}
           </div>
           <div className="text-[0.8rem] leading-relaxed text-slate-900 px-4">
             <div className="flex justify-between mb-1 gap-2 flex-wrap">
@@ -567,6 +583,7 @@ export default function PrescriptionsClientPage() {
               <span className="font-bold text-slate-500">Advice:</span> <span>{currentRx.notes}</span>
             </div>}
           </div>
+          </div>
           {templateStyle === 'header-footer' && (
             <>
               <div className="px-4 pb-2 flex justify-end">
@@ -576,20 +593,16 @@ export default function PrescriptionsClientPage() {
                 </div>
               </div>
               <div className="mt-auto pt-2 px-4 pb-4">
-                <div className="border-t border-gray-200 pt-2 text-center">
-                  <div className="inline-flex flex-col gap-0.5 text-[0.6rem] text-slate-500 leading-relaxed">
-                    {footerLines.map(line => (
-                      <div key={line.id}><span className="font-bold text-slate-700">{line.label}:</span> {line.value}</div>
-                    ))}
-                  </div>
-                </div>
+                <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: prescriptionFooterHtml }} />
               </div>
             </>
           )}
           {templateStyle === 'header-only' && (
-            <div className="absolute bottom-4 right-5 text-center">
-              <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-              <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
+            <div className="mt-auto px-4 pb-4 flex justify-end">
+              <div className="text-center">
+                <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
+                <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
+              </div>
             </div>
           )}
         </div>

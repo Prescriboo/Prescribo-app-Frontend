@@ -565,9 +565,6 @@ video {
 .bottom-0 {
   bottom: 0px;
 }
-.bottom-4 {
-  bottom: 1rem;
-}
 .bottom-6 {
   bottom: 1.5rem;
 }
@@ -580,14 +577,8 @@ video {
 .right-2\.5 {
   right: 0.625rem;
 }
-.right-5 {
-  right: 1.25rem;
-}
 .right-6 {
   right: 1.5rem;
-}
-.right-8 {
-  right: 2rem;
 }
 .top-0 {
   top: 0px;
@@ -717,6 +708,9 @@ video {
 .block {
   display: block;
 }
+.inline {
+  display: inline;
+}
 .flex {
   display: flex;
 }
@@ -812,6 +806,9 @@ video {
 }
 .min-h-0 {
   min-height: 0px;
+}
+.min-h-\[200px\] {
+  min-height: 200px;
 }
 .min-h-\[210mm\] {
   min-height: 210mm;

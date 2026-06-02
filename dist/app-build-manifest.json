@@ -11,25 +11,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/layout.js"
     ],
-    "/(app)/dashboard/page": [
+    "/(app)/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(app)/dashboard/page.js"
+      "static/chunks/app/(app)/settings/page.js"
     ],
     "/(app)/prescriptions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/prescriptions/page.js"
     ],
-    "/(app)/history/page": [
+    "/(app)/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(app)/history/page.js"
-    ],
-    "/(app)/templates/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(app)/templates/page.js"
+      "static/chunks/app/(app)/dashboard/page.js"
     ]
   }
 }

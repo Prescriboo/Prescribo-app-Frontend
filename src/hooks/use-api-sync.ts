@@ -135,11 +135,14 @@ export function useApiSync(): UseApiSyncReturn {
         console.warn('Sync prescriptions failed:', e.message)
       }
 
-      // Sync doctor profile
+      // Sync doctor profile + app settings
       try {
-        const profile = await settingsApi.doctorProfile.get()
-        if (profile) {
-          useSettingsStore.getState().syncFromApi(profile)
+        const [profile, appSettings] = await Promise.all([
+          settingsApi.doctorProfile.get(),
+          settingsApi.app.list().catch(() => []),
+        ])
+        if (profile || appSettings) {
+          useSettingsStore.getState().syncFromApi(profile, appSettings)
         }
       } catch (e: any) {
         console.warn('Sync doctor profile failed:', e.message)

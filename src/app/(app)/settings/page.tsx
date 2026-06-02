@@ -11,7 +11,7 @@ import { useFrequencyStore } from '@/stores/frequency-store'
 import { useDurationStore } from '@/stores/duration-store'
 import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
-import { usePrescriptionFooterStore } from '@/stores/prescription-footer-store'
+
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   Building, Shield, Pill, Database, KeyRound,
-  Search, Plus, Trash2, Pencil, X, FileText, Download,
+  Search, Plus, Trash2, Pencil, X, FileText, Download, Save,
   ListChecks, Clock, Calendar, UserRound, LayoutTemplate
 } from 'lucide-react'
 
@@ -100,13 +100,61 @@ function ClinicTab({ clinic, updateClinic, addToast }: any) {
             <Input value={clinic.doctorQual} onChange={(e) => updateClinic({ doctorQual: e.target.value })} />
           </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-500">Registration Number</label>
-          <Input value={clinic.regNo} onChange={(e) => updateClinic({ regNo: e.target.value })} />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Specialization</label>
+            <Input value={clinic.specialization} onChange={(e) => updateClinic({ specialization: e.target.value })} placeholder="e.g. Chest Physician" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Registration Number</label>
+            <Input value={clinic.regNo} onChange={(e) => updateClinic({ regNo: e.target.value })} />
+          </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-500">Clinic Address</label>
-          <Textarea value={clinic.address} onChange={(e) => updateClinic({ address: e.target.value })} />
+          <label className="text-xs font-semibold text-slate-500">Clinic Address Line 1</label>
+          <Input value={clinic.clinicAddressLine1} onChange={(e) => updateClinic({ clinicAddressLine1: e.target.value })} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">Clinic Address Line 2</label>
+          <Input value={clinic.clinicAddressLine2} onChange={(e) => updateClinic({ clinicAddressLine2: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">City</label>
+            <Input value={clinic.city} onChange={(e) => updateClinic({ city: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">State</label>
+            <Input value={clinic.state} onChange={(e) => updateClinic({ state: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Pincode</label>
+            <Input value={clinic.pincode} onChange={(e) => updateClinic({ pincode: e.target.value })} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">Country</label>
+          <Input value={clinic.country} onChange={(e) => updateClinic({ country: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Phone</label>
+            <Input value={clinic.phone} onChange={(e) => updateClinic({ phone: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Email</label>
+            <Input type="email" value={clinic.email} onChange={(e) => updateClinic({ email: e.target.value })} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Website</label>
+            <Input value={clinic.website} onChange={(e) => updateClinic({ website: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500">Default Language</label>
+            <Input value={clinic.defaultLanguage} onChange={(e) => updateClinic({ defaultLanguage: e.target.value })} placeholder="e.g. en, ml" />
+          </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500">Signature Text</label>
@@ -553,77 +601,40 @@ function TemplatesTab({ templateStyle, addToast }: any) {
 
 /* ===================== FOOTER TAB ===================== */
 function FooterTab({ addToast }: any) {
-  const { items, addItem, updateItem, deleteItem } = usePrescriptionFooterStore()
-  const [showModal, setShowModal] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [label, setLabel] = useState('')
-  const [value, setValue] = useState('')
+  const { prescriptionFooterHtml, updatePrescriptionFooterHtml } = useSettingsStore()
+  const [html, setHtml] = useState(prescriptionFooterHtml)
 
-  const openAdd = () => { setEditingId(null); setLabel(''); setValue(''); setShowModal(true) }
-  const openEdit = (id: number) => {
-    const item = items.find(x => x.id === id)
-    if (!item) return
-    setEditingId(id); setLabel(item.label); setValue(item.value); setShowModal(true)
+  const handleSave = async () => {
+    await updatePrescriptionFooterHtml(html)
+    addToast('Prescription footer saved', 'success')
   }
-  const handleSave = () => {
-    if (!label.trim() || !value.trim()) { addToast('Please enter both label and value', 'error'); return }
-    if (editingId) {
-      updateItem(editingId, label, value)
-      addToast('Footer line updated', 'success')
-    } else {
-      addItem(label, value)
-      addToast('Footer line added', 'success')
-    }
-    setShowModal(false)
-  }
-  const handleDelete = (id: number) => { deleteItem(id); addToast('Footer line deleted', 'info') }
 
   return (
     <div className="max-w-[700px]">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><FileText className="w-[18px] h-[18px]" /> Prescription Footer</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Manage footer lines that appear on prescription printouts</p>
-        </div>
-        <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Line</Button>
+      <div className="mb-5">
+        <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><FileText className="w-[18px] h-[18px]" /> Prescription Footer</h3>
+        <p className="text-xs text-slate-400 mt-0.5">Enter HTML for the prescription footer. You can use inline styles for formatting.</p>
       </div>
-      <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full">
-          <thead><tr className="bg-bg">
-            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Label</th>
-            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Value</th>
-            <th className="text-left px-4 py-3.5 text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Actions</th>
-          </tr></thead>
-          <tbody>
-            {items.length > 0 ? items.map(item => (
-              <tr key={item.id} className="hover:bg-slate-50 transition-all">
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50 font-semibold">{item.label}</td>
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50 text-slate-600">{item.value}</td>
-                <td className="px-4 py-3.5 text-sm border-b border-slate-50">
-                  <div className="flex gap-1">
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all" onClick={() => openEdit(item.id)} title="Edit"><Pencil className="w-4 h-4" /></button>
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-danger-50 hover:text-danger transition-all" onClick={() => handleDelete(item.id)} title="Delete"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
-            )) : (
-              <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400">No footer lines found. Click "Add Line" to create one.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Edit Footer Line' : 'Add Footer Line'} footer={<><Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button><Button onClick={handleSave}>{editingId ? 'Update' : 'Save'}</Button></>}>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Label *</label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Consultation" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Value *</label>
-            <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="e.g. Mon-Sat: 9:00 AM - 6:00 PM" />
-          </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">Footer HTML</label>
+          <textarea
+            value={html}
+            onChange={(e) => setHtml(e.target.value)}
+            placeholder={'<div style="text-align:center;font-weight:bold;">DO NOT SUBSTITUTE MEDICINE</div>\n<div style="text-align:center;font-size:0.7rem;">Your address and contact info here</div>'}
+            className="flex w-full rounded-md border border-border bg-white px-3.5 py-2.5 text-sm shadow-sm focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary-100 resize-y min-h-[200px] font-mono"
+          />
         </div>
-      </Modal>
+        <div className="flex justify-end">
+          <Button onClick={handleSave}><Save className="w-4 h-4" /> Save Footer</Button>
+        </div>
+        {html && (
+          <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500 mb-2">Preview</div>
+            <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
