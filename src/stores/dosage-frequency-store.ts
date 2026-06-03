@@ -12,7 +12,8 @@ interface DosageFrequencyState {
   updateEntry: (id: number, data: Partial<DosageFrequencyEntry>) => Promise<void>
   deleteEntry: (id: number) => Promise<void>
   searchEntries: (query: string) => DosageFrequencyEntry[]
-  syncFromApi: (apiItems: {
+  clearAll: () => void
+      syncFromApi: (apiItems: {
     id: number
     medicine_name: string
     dosage_id: number
@@ -111,6 +112,8 @@ export const useDosageFrequencyStore = create<DosageFrequencyState>((set, get) =
         const term = query.toLowerCase()
         return get().entries.filter((e) => e.medicineName.toLowerCase().includes(term))
       },
+
+      clearAll: () => set({ entries: [] }),
 
       syncFromApi: (apiItems) => {
         set({

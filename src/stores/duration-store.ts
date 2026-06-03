@@ -12,7 +12,8 @@ interface DurationState {
   updateItem: (id: number, duration: string) => Promise<void>
   deleteItem: (id: number) => Promise<void>
   getDurationById: (id: number) => string
-  syncFromApi: (apiItems: { id: number; duration: string }[]) => void
+  clearAll: () => void
+      syncFromApi: (apiItems: { id: number; duration: string }[]) => void
 }
 
 export const useDurationStore = create<DurationState>((set, get) => ({
@@ -79,6 +80,8 @@ export const useDurationStore = create<DurationState>((set, get) => ({
         const item = get().items.find((i) => i.id === id)
         return item?.duration || ''
       },
+
+      clearAll: () => set({ items: [] }),
 
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((d) => ({ id: d.id, duration: d.duration })) })

@@ -258,6 +258,14 @@ export interface AuthState {
   pin: string
   has_pin: boolean
   demo_mode: boolean
+  plan?: string
+  status?: string
+  activated_at?: string
+  access_expires_at?: string
+  refresh_expires_at?: string
+  grace_period_until?: string
+  last_refreshed_at?: string
+  machine_id?: string
 }
 
 export interface LicenceStatus {
@@ -267,6 +275,13 @@ export interface LicenceStatus {
   grace_expired?: boolean
   days_until_lock?: number
   message: string
+  plan?: string
+  status?: string
+  activated_at?: string
+  access_expires_at?: string
+  refresh_expires_at?: string
+  grace_period_until?: string
+  machine_id?: string
 }
 
 export interface BackupStatus {
@@ -401,6 +416,7 @@ export const mastersApi = {
       put<{ id: number; medicine_name: string; dosage_id: number; frequency_id: number; duration_id: number; notes?: string; created_at?: string; dosage?: string; frequency?: string; duration?: string }>(`/api/masters/dosage-frequency/${id}`, data),
     remove: (id: number) => del<{ message: string }>(`/api/masters/dosage-frequency/${id}`),
   },
+  flush: () => post<{ success: boolean; message: string }>('/api/masters/flush', {}),
 }
 
 // ============================================================

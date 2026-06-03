@@ -80,4 +80,40 @@ contextBridge.exposeInMainWorld('electron', {
     platform: process.platform,
     homedir: () => ipcRenderer.invoke('os:homedir'),
   },
+
+  // Auto-updater
+  updater: {
+    check: () => ipcRenderer.invoke('updater:check'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    onChecking: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:checking', handler)
+      return () => ipcRenderer.removeListener('updater:checking', handler)
+    },
+    onAvailable: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:available', handler)
+      return () => ipcRenderer.removeListener('updater:available', handler)
+    },
+    onNotAvailable: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:not-available', handler)
+      return () => ipcRenderer.removeListener('updater:not-available', handler)
+    },
+    onProgress: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:progress', handler)
+      return () => ipcRenderer.removeListener('updater:progress', handler)
+    },
+    onDownloaded: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:downloaded', handler)
+      return () => ipcRenderer.removeListener('updater:downloaded', handler)
+    },
+    onError: (callback) => {
+      const handler = (_event, data) => callback(data)
+      ipcRenderer.on('updater:error', handler)
+      return () => ipcRenderer.removeListener('updater:error', handler)
+    },
+  },
 })
