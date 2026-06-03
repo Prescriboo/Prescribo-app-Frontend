@@ -13,8 +13,7 @@ interface MedicineHistoryState {
   deleteEntry: (id: number) => Promise<void>
   deleteEntries: (ids: number[]) => Promise<void>
   searchEntries: (query: string) => MedicineHistoryEntry[]
-  clearAll: () => void
-      syncFromApi: (apiItems: { id: number; medicine_name: string }[]) => void
+  syncFromApi: (apiItems: { id: number; medicine_name: string }[]) => void
 }
 
 export const useMedicineHistoryStore = create<MedicineHistoryState>((set, get) => ({
@@ -92,8 +91,6 @@ export const useMedicineHistoryStore = create<MedicineHistoryState>((set, get) =
         const term = query.toLowerCase()
         return get().entries.filter((e) => e.name.toLowerCase().includes(term))
       },
-
-      clearAll: () => set({ entries: [] }),
 
       syncFromApi: (apiItems) => {
         set({

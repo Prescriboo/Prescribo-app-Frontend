@@ -11,8 +11,6 @@ files:
 extraResources:
   - from: ./resources
     to: resources
-  - from: ../prescribo-app-backend/dist/prescribo-backend
-    to: prescribo-app-backend
 mac:
   category: public.app-category.medical
   icon: resources/icon.icns
@@ -40,11 +38,6 @@ linux:
     - target: deb
       arch:
         - x64
-publish:
-  provider: github
-  owner: shahinyahya
-  repo: Prescribo-app-Frontend
-  releaseType: release
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

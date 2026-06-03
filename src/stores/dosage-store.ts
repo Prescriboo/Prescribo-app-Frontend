@@ -12,8 +12,7 @@ interface DosageState {
   updateItem: (id: number, dosage: string) => Promise<void>
   deleteItem: (id: number) => Promise<void>
   getDosageById: (id: number) => string
-  clearAll: () => void
-      syncFromApi: (apiItems: { id: number; dosage: string }[]) => void
+  syncFromApi: (apiItems: { id: number; dosage: string }[]) => void
 }
 
 export const useDosageStore = create<DosageState>((set, get) => ({
@@ -80,8 +79,6 @@ export const useDosageStore = create<DosageState>((set, get) => ({
         const item = get().items.find((i) => i.id === id)
         return item?.dosage || ''
       },
-
-      clearAll: () => set({ items: [] }),
 
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((d) => ({ id: d.id, dosage: d.dosage })) })

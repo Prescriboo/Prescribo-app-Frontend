@@ -12,8 +12,7 @@ interface FrequencyState {
   updateItem: (id: number, frequency: string) => Promise<void>
   deleteItem: (id: number) => Promise<void>
   getFrequencyById: (id: number) => string
-  clearAll: () => void
-      syncFromApi: (apiItems: { id: number; frequency: string }[]) => void
+  syncFromApi: (apiItems: { id: number; frequency: string }[]) => void
 }
 
 export const useFrequencyStore = create<FrequencyState>((set, get) => ({
@@ -80,8 +79,6 @@ export const useFrequencyStore = create<FrequencyState>((set, get) => ({
         const item = get().items.find((i) => i.id === id)
         return item?.frequency || ''
       },
-
-      clearAll: () => set({ items: [] }),
 
       syncFromApi: (apiItems) => {
         set({ items: (apiItems || []).map((f) => ({ id: f.id, frequency: f.frequency })) })

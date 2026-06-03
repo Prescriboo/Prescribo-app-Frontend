@@ -14,7 +14,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 
 import { useUIStore } from '@/stores/ui-store'
-import { autocompleteApi, backupApi, authApi, mastersApi, type AuthState, type LicenceStatus } from '@/lib/api'
+import { autocompleteApi, backupApi, authApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,8 +23,8 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   Building, Shield, Pill, Database, KeyRound,
-  Search, Plus, Trash2, Trash, Pencil, X, FileText, Download, Save, Upload,
-  ListChecks, Clock, Calendar, UserRound, LayoutTemplate, RefreshCw
+  Search, Plus, Trash2, Pencil, X, FileText, Download, Save, Upload,
+  ListChecks, Clock, Calendar, UserRound, LayoutTemplate
 } from 'lucide-react'
 
 const tabs = [
@@ -485,20 +485,16 @@ function MedicineHistoryTab() {
 
 /* ===================== MASTER DATA TAB (Dosage, Frequency, Duration) ===================== */
 function MasterDataTab() {
-  const { items: dosages, addItem: addDosage, updateItem: updateDosage, deleteItem: deleteDosage, clearAll: clearDosages } = useDosageStore()
-  const { items: frequencies, addItem: addFreq, updateItem: updateFreq, deleteItem: deleteFreq, clearAll: clearFrequencies } = useFrequencyStore()
-  const { items: durations, addItem: addDur, updateItem: updateDur, deleteItem: deleteDur, clearAll: clearDurations } = useDurationStore()
-  const { items: complaints, addItem: addComplaint, updateItem: updateComplaint, deleteItem: deleteComplaint, clearAll: clearComplaints } = useComplaintStore()
-  const { items: diagnoses, addItem: addDiagnosis, updateItem: updateDiagnosis, deleteItem: deleteDiagnosis, clearAll: clearDiagnoses } = useDiagnosisStore()
-  const { entries: medicineEntries, clearAll: clearMedicines } = useMedicineHistoryStore()
-  const { entries: dfEntries, clearAll: clearDosageFreq } = useDosageFrequencyStore()
+  const { items: dosages, addItem: addDosage, updateItem: updateDosage, deleteItem: deleteDosage } = useDosageStore()
+  const { items: frequencies, addItem: addFreq, updateItem: updateFreq, deleteItem: deleteFreq } = useFrequencyStore()
+  const { items: durations, addItem: addDur, updateItem: updateDur, deleteItem: deleteDur } = useDurationStore()
+  const { items: complaints, addItem: addComplaint, updateItem: updateComplaint, deleteItem: deleteComplaint } = useComplaintStore()
+  const { items: diagnoses, addItem: addDiagnosis, updateItem: updateDiagnosis, deleteItem: deleteDiagnosis } = useDiagnosisStore()
   const { addToast } = useUIStore()
   const [activeSubTab, setActiveSubTab] = useState<'dosage' | 'frequency' | 'duration' | 'complaint' | 'diagnosis'>('dosage')
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [value, setValue] = useState('')
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
-  const [clearing, setClearing] = useState(false)
 
   const config = {
     dosage: { label: 'Dosage', items: dosages, add: addDosage, update: updateDosage, delete: deleteDosage, placeholder: 'e.g. 500mg', key: 'dosage' as const },
@@ -534,28 +530,6 @@ function MasterDataTab() {
     addToast(`${current.label} deleted`, 'info')
   }
 
-  const handleClearAll = async () => {
-    setClearing(true)
-    try {
-      await mastersApi.flush()
-      clearDosages()
-      clearFrequencies()
-      clearDurations()
-      clearComplaints()
-      clearDiagnoses()
-      clearMedicines()
-      clearDosageFreq()
-      addToast('All master data cleared successfully', 'success')
-    } catch (err: any) {
-      addToast(err.message || 'Failed to clear master data', 'error')
-    } finally {
-      setClearing(false)
-      setShowClearConfirm(false)
-    }
-  }
-
-  const totalCount = dosages.length + frequencies.length + durations.length + complaints.length + diagnoses.length + medicineEntries.length + dfEntries.length
-
   return (
     <div className="max-w-[700px]">
       <div className="flex items-center justify-between mb-5">
@@ -563,14 +537,7 @@ function MasterDataTab() {
           <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900"><ListChecks className="w-[18px] h-[18px]" /> Master Data</h3>
           <p className="text-xs text-slate-400 mt-0.5">Manage dosage, frequency, duration, chief complaints and diagnosis master lists</p>
         </div>
-        <div className="flex gap-2">
-          {totalCount > 0 && (
-            <Button variant="outline" onClick={() => setShowClearConfirm(true)} className="text-danger border-danger/30 hover:bg-red-50 hover:text-danger">
-              <Trash className="w-4 h-4" /> Clear All
-            </Button>
-          )}
-          <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add {current.label}</Button>
-        </div>
+        <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add {current.label}</Button>
       </div>
 
       <div className="flex gap-1 mb-4 bg-bg p-1 rounded-lg border border-border w-fit">
@@ -621,33 +588,6 @@ function MasterDataTab() {
             <label className="text-xs font-semibold text-slate-500">{current.label} *</label>
             <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder={current.placeholder} />
           </div>
-        </div>
-      </Modal>
-
-      {/* Clear All Confirmation */}
-      <Modal isOpen={showClearConfirm} onClose={() => setShowClearConfirm(false)} title="Clear All Master Data?" footer={
-        <>
-          <Button variant="ghost" onClick={() => setShowClearConfirm(false)} disabled={clearing}>Cancel</Button>
-          <Button variant="danger" onClick={handleClearAll} disabled={clearing}>
-            {clearing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
-            <span className="ml-2">{clearing ? 'Clearing...' : 'Clear All'}</span>
-          </Button>
-        </>
-      }>
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-slate-600">
-            This will permanently delete all master data entries:
-          </p>
-          <ul className="text-sm text-slate-500 list-disc list-inside space-y-1">
-            <li>Dosages ({dosages.length})</li>
-            <li>Frequencies ({frequencies.length})</li>
-            <li>Durations ({durations.length})</li>
-            <li>Chief Complaints ({complaints.length})</li>
-            <li>Diagnoses ({diagnoses.length})</li>
-            <li>Medicine Names ({medicineEntries.length})</li>
-            <li>Dosage-Frequency Entries ({dfEntries.length})</li>
-          </ul>
-          <p className="text-sm text-danger font-medium">This action cannot be undone.</p>
         </div>
       </Modal>
     </div>
@@ -1052,123 +992,20 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
 }
 
 /* ===================== LICENSE TAB ===================== */
-function formatDate(iso?: string) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-function daysUntil(iso?: string) {
-  if (!iso) return null
-  const diff = new Date(iso).getTime() - Date.now()
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
-}
-
-function maskKey(key: string) {
-  if (!key || key.length < 12) return key
-  return key.slice(0, 8) + '••••••••'
-}
-
-/* ===================== APP UPDATES SECTION ===================== */
-function AppUpdatesSection({ addToast }: { addToast: any }) {
-  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'available' | 'downloaded' | 'error'>('idle')
-  const [updateVersion, setUpdateVersion] = useState('')
-  const [isElectron, setIsElectron] = useState(false)
-
-  useEffect(() => {
-    setIsElectron(typeof window !== 'undefined' && !!window.electron)
-  }, [])
-
-  const handleCheck = async () => {
-    if (!window.electron?.updater) {
-      addToast('Auto-updater is not available', 'error')
-      return
-    }
-    setUpdateState('checking')
-    try {
-      const result = await window.electron.updater.check()
-      if (!result.success) {
-        setUpdateState('error')
-        addToast(result.error || 'Update check failed', 'error')
-        return
-      }
-      if (result.updateInfo && result.updateInfo.version) {
-        setUpdateVersion(result.updateInfo.version)
-        setUpdateState('available')
-        addToast(`Update ${result.updateInfo.version} available — downloading...`, 'success')
-      } else {
-        setUpdateState('idle')
-        addToast('You are on the latest version', 'success')
-      }
-    } catch (err: any) {
-      setUpdateState('error')
-      addToast(err.message || 'Update check failed', 'error')
-    }
-  }
-
-  const handleInstall = () => {
-    if (window.electron?.updater) {
-      window.electron.updater.install()
-    }
-  }
-
-  if (!isElectron) {
-    return (
-      <div className="bg-slate-50 border border-border rounded-xl p-5">
-        <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900 mb-2">
-          <Download className="w-[18px] h-[18px]" /> App Updates
-        </h3>
-        <p className="text-xs text-slate-500">
-          Auto-updates are only available in the desktop app.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
-          <Download className="w-[18px] h-[18px]" /> App Updates
-        </h3>
-        <Badge variant={updateState === 'available' || updateState === 'downloaded' ? 'warning' : 'default'}>
-          {updateState === 'idle' && 'Up to date'}
-          {updateState === 'checking' && 'Checking...'}
-          {updateState === 'available' && `${updateVersion} available`}
-          {updateState === 'downloaded' && 'Ready to install'}
-          {updateState === 'error' && 'Check failed'}
-        </Badge>
-      </div>
-
-      <p className="text-xs text-slate-500 mb-4">
-        Prescribo checks for updates automatically. You can also check manually below.
-      </p>
-
-      <div className="flex gap-2">
-        {updateState === 'downloaded' ? (
-          <Button size="sm" onClick={handleInstall}>
-            <RefreshCw className="w-4 h-4" />
-            <span className="ml-2">Restart to Update</span>
-          </Button>
-        ) : (
-          <Button size="sm" onClick={handleCheck} disabled={updateState === 'checking'}>
-            {updateState === 'checking' ? (
-              <Clock className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            <span className="ml-2">{updateState === 'checking' ? 'Checking...' : 'Check for Updates'}</span>
-          </Button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ===================== LICENSE TAB ===================== */
 function LicenseTab({ licenseKey, demoMode, addToast }: { licenseKey: string; demoMode: boolean; addToast: any }) {
-  const [state, setState] = useState<AuthState | null>(null)
-  const [status, setStatus] = useState<LicenceStatus | null>(null)
+  const [state, setState] = useState<{
+    is_activated?: boolean
+    license_key?: string
+    demo_mode?: boolean
+  } | null>(null)
+  const [status, setStatus] = useState<{
+    valid?: boolean
+    access_expired?: boolean
+    refresh_expired?: boolean
+    grace_expired?: boolean
+    days_until_lock?: number
+    message?: string
+  } | null>(null)
   const [checking, setChecking] = useState(false)
 
   const fetchLicenseInfo = async () => {
@@ -1211,187 +1048,48 @@ function LicenseTab({ licenseKey, demoMode, addToast }: { licenseKey: string; de
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout()
-      window.location.reload()
-    } catch {
-      window.location.reload()
-    }
-  }
-
   const isLocked = !status?.valid && !!status?.grace_expired
-  const displayKey = demoMode ? 'DEMO-MODE-XXXX' : maskKey(state?.license_key || licenseKey || '')
-  const planLabel = state?.plan || (demoMode ? 'demo' : '')
-  const planDisplay = planLabel === 'individual' ? 'Individual' : planLabel === 'clinic' ? 'Clinic' : planLabel === 'demo' ? 'Demo' : '—'
-  const statusLabel = status?.status === 'revoked' ? 'Revoked' : isLocked ? 'Locked' : status?.grace_expired ? 'Grace Period' : status?.access_expired ? 'Token Expired' : status?.valid ? 'Active' : 'Inactive'
-  const statusDot = status?.status === 'revoked' || isLocked ? 'bg-danger' : status?.access_expired || status?.refresh_expired ? 'bg-warning' : 'bg-success'
-  const statusText = status?.status === 'revoked' || isLocked ? 'text-danger' : status?.access_expired || status?.refresh_expired ? 'text-warning' : 'text-success'
-  const accessDays = daysUntil(status?.access_expires_at)
-  const refreshDays = daysUntil(status?.refresh_expires_at)
-  const graceDays = status?.days_until_lock
+  const displayKey = demoMode ? 'DEMO-MODE-XXXX' : (state?.license_key || licenseKey || '—')
+  const displayPlan = demoMode ? 'Demo' : (status?.valid ? 'Professional' : '—')
+  const displayStatus = isLocked ? 'Locked' : status?.grace_expired ? 'Grace period' : status?.access_expired ? 'Token expired' : status?.valid ? 'Active' : 'Inactive'
+  const statusColor = isLocked ? 'text-danger' : status?.access_expired || status?.refresh_expired ? 'text-warning' : 'text-success'
 
   return (
-    <div className="space-y-5 max-w-[680px]">
-      {/* Demo Banner */}
-      {demoMode && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-amber-800">Demo Mode Active</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              You are using a 7-day demo. Activate a license key to unlock full features and remove demo restrictions.
-            </p>
-            <Button size="sm" className="mt-2 bg-amber-600 hover:bg-amber-700 text-white" onClick={() => window.location.href = '/activate'}>
-              Activate License
-            </Button>
-          </div>
+    <div className="bg-white border border-border rounded-xl p-5 shadow-sm max-w-[680px]">
+      <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
+        <KeyRound className="w-[18px] h-[18px]" /> License Information
+      </h3>
+
+      {isLocked && (
+        <div className="bg-danger-50 border border-danger/20 rounded-lg p-3 mb-4 text-sm text-danger">
+          Your license is locked. Please renew to restore full functionality.
         </div>
       )}
 
-      {/* Revoked Banner */}
-      {status?.status === 'revoked' && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-red-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-red-800">License Revoked</p>
-            <p className="text-xs text-red-700 mt-0.5">
-              This license has been revoked by the administrator. Please contact support or enter a new license key.
-            </p>
-            <Button size="sm" variant="outline" className="mt-2 border-red-300 text-red-700 hover:bg-red-100" onClick={() => window.location.href = '/activate'}>
-              Enter New License Key
-            </Button>
-          </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">License Key</label>
+          <Input value={displayKey} readOnly className="bg-slate-50 text-slate-500" />
         </div>
-      )}
-
-      {/* Server Message Banner */}
-      {status?.message && !status.valid && status.status !== 'revoked' && !demoMode && (
-        <div className="bg-danger-50 border border-danger/20 rounded-xl p-4 text-sm text-danger">
-          {status.message}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">Plan</label>
+          <Input value={displayPlan} readOnly className="bg-slate-50 text-slate-500" />
         </div>
-      )}
-
-      {/* Main License Card */}
-      <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
-            <KeyRound className="w-[18px] h-[18px]" /> License Information
-          </h3>
-          <Badge variant={demoMode ? 'warning' : status?.valid ? 'success' : 'danger'}>
-            {planDisplay}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* License Key */}
-          <div className="sm:col-span-2 flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">License Key</label>
-            <div className="flex gap-2">
-              <Input value={displayKey} readOnly className="bg-slate-50 text-slate-600 font-mono text-sm flex-1" />
-              <Button variant="outline" size="sm" className="flex-shrink-0" onClick={() => {
-                navigator.clipboard.writeText(state?.license_key || licenseKey)
-                addToast('License key copied', 'success')
-              }} disabled={demoMode}>
-                Copy
-              </Button>
-            </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-500">Status</label>
+          <div className="flex items-center gap-2 bg-slate-50 border border-border rounded-md px-3 py-2">
+            <span className={`w-2 h-2 rounded-full ${isLocked ? 'bg-danger' : status?.access_expired || status?.refresh_expired ? 'bg-warning' : 'bg-success'}`} />
+            <span className={`text-sm font-medium ${statusColor}`}>{displayStatus}</span>
+            {status?.days_until_lock !== undefined && status.days_until_lock !== null && (
+              <span className="text-xs text-slate-400">({status.days_until_lock} days until lock)</span>
+            )}
           </div>
-
-          {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Status</label>
-            <div className="flex items-center gap-2 bg-slate-50 border border-border rounded-md px-3 py-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${statusDot}`} />
-              <span className={`text-sm font-semibold ${statusText}`}>{statusLabel}</span>
-              {graceDays !== undefined && graceDays !== null && (
-                <span className="text-xs text-slate-400 ml-auto">{graceDays}d until lock</span>
-              )}
-            </div>
-          </div>
-
-          {/* Activation Date */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Activated On</label>
-            <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-sm text-slate-600">
-              {formatDate(state?.activated_at)}
-            </div>
-          </div>
-
-          {/* Access Token Expiry */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Access Token Expires</label>
-            <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-sm text-slate-600">
-              {formatDate(status?.access_expires_at)}
-              {accessDays !== null && accessDays <= 3 && accessDays >= 0 && (
-                <span className="text-xs text-danger font-medium ml-2">({accessDays}d left)</span>
-              )}
-            </div>
-          </div>
-
-          {/* Refresh Token Expiry */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Refresh Token Expires</label>
-            <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-sm text-slate-600">
-              {formatDate(status?.refresh_expires_at)}
-              {refreshDays !== null && refreshDays <= 7 && refreshDays >= 0 && (
-                <span className="text-xs text-warning font-medium ml-2">({refreshDays}d left)</span>
-              )}
-            </div>
-          </div>
-
-          {/* Grace Period */}
-          {status?.grace_period_until && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500">Grace Period Ends</label>
-              <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-sm text-slate-600">
-                {formatDate(status.grace_period_until)}
-              </div>
-            </div>
-          )}
-
-          {/* Machine ID */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Machine ID</label>
-            <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-xs text-slate-400 font-mono truncate" title={state?.machine_id || status?.machine_id}>
-              {(state?.machine_id || status?.machine_id || '—').slice(0, 16)}…
-            </div>
-          </div>
-
-          {/* Last Refreshed */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-500">Last Refreshed</label>
-            <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-sm text-slate-600">
-              {formatDate(state?.last_refreshed_at)}
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="mt-5 pt-4 border-t border-border flex flex-wrap gap-2">
-          <Button onClick={handleVerify} disabled={checking} size="sm">
-            {checking ? <Clock className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-            <span className="ml-2">Verify</span>
-          </Button>
-          <Button variant="outline" onClick={handleRenew} disabled={checking || demoMode} size="sm">
-            <RefreshCw className="w-4 h-4" />
-            <span className="ml-2">Renew</span>
-          </Button>
-          {!demoMode && (
-            <Button variant="ghost" onClick={handleLogout} disabled={checking} size="sm" className="text-danger hover:bg-red-50 hover:text-red-700 ml-auto">
-              <Trash2 className="w-4 h-4" />
-              <span className="ml-2">Deactivate</span>
-            </Button>
-          )}
         </div>
       </div>
-
-      {/* App Updates */}
-      <AppUpdatesSection addToast={addToast} />
+      <div className="mt-4 flex gap-2">
+        <Button onClick={handleVerify} disabled={checking}>Verify License</Button>
+        <Button variant="outline" onClick={handleRenew} disabled={checking || demoMode}>Renew License</Button>
+      </div>
     </div>
   )
 }

@@ -12,8 +12,7 @@ interface ComplaintState {
   updateItem: (id: number, complaint: string) => Promise<void>
   deleteItem: (id: number) => Promise<void>
   getComplaintById: (id: number) => string
-  clearAll: () => void
-      syncFromApi: (apiItems: { id: number; chief_complaints: string }[]) => void
+  syncFromApi: (apiItems: { id: number; chief_complaints: string }[]) => void
 }
 
 export const useComplaintStore = create<ComplaintState>((set, get) => ({
@@ -80,8 +79,6 @@ export const useComplaintStore = create<ComplaintState>((set, get) => ({
         const item = get().items.find((i) => i.id === id)
         return item ? item.complaint : ''
       },
-
-      clearAll: () => set({ items: [] }),
 
       syncFromApi: (apiItems) => {
         set({
