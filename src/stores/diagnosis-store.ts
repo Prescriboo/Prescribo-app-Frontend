@@ -12,7 +12,8 @@ interface DiagnosisState {
   updateItem: (id: number, diagnosis: string) => Promise<void>
   deleteItem: (id: number) => Promise<void>
   getDiagnosisById: (id: number) => string
-  syncFromApi: (apiItems: { id: number; diagnosis: string }[]) => void
+  clearAll: () => void
+      syncFromApi: (apiItems: { id: number; diagnosis: string }[]) => void
 }
 
 export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
@@ -79,6 +80,8 @@ export const useDiagnosisStore = create<DiagnosisState>((set, get) => ({
         const item = get().items.find((i) => i.id === id)
         return item ? item.diagnosis : ''
       },
+
+      clearAll: () => set({ items: [] }),
 
       syncFromApi: (apiItems) => {
         set({

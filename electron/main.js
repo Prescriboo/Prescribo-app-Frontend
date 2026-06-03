@@ -15,6 +15,7 @@ require('./ipc-handlers/fs')
 
 const { startBackend, stopBackend } = require('./backend-spawner')
 const { setBackendUrl, getBackendUrl } = require('./ipc-handlers/api')
+const { initAutoUpdater, stopAutoUpdater } = require('./auto-updater')
 
 let mainWindow
 let splashWindow
@@ -294,6 +295,8 @@ function createMainWindow() {
     if (state.maximized) mainWindow.maximize()
     mainWindow.show()
     mainWindow.focus()
+    // Initialize auto-updater after window is shown
+    initAutoUpdater(mainWindow)
   })
 
   // Save state on changes
@@ -360,6 +363,7 @@ app.on('before-quit', () => {
   saveWindowState()
   stopLicenseGuardian()
   stopBackend()
+  stopAutoUpdater()
 })
 
 // Online/offline awareness
