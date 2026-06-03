@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
@@ -14,7 +14,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 
 import { useUIStore } from '@/stores/ui-store'
-import { autocompleteApi } from '@/lib/api'
+import { autocompleteApi, backupApi, authApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -73,7 +73,7 @@ export default function SettingsPage() {
         {activeTab === 'patient-history' && <PatientHistoryTab />}
         {activeTab === 'templates' && <TemplatesTab templateStyle={templateStyle} addToast={addToast} />}
         {activeTab === 'footer' && <FooterTab addToast={addToast} />}
-        {activeTab === 'backup' && <BackupTab addToast={addToast} />}
+        {activeTab === 'backup' && <BackupTab addToast={addToast} demoMode={demoMode} />}
         {activeTab === 'license' && <LicenseTab licenseKey={licenseKey} demoMode={demoMode} addToast={addToast} />}
       </div>
     </div>
@@ -854,46 +854,241 @@ function FooterTab({ addToast }: any) {
 }
 
 /* ===================== BACKUP TAB ===================== */
-function BackupTab({ addToast }: any) {
+function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean }) {
+  const [status, setStatus] = useState<{
+    last_backup_at?: string
+    next_backup_due?: string
+    db_path: string
+    db_size_bytes: number
+  } | null>(null)
+  const [licenceStatus, setLicenceStatus] = useState<{
+    valid: boolean
+    grace_expired?: boolean
+  } | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const licenceLocked = !licenceStatus?.valid && !!licenceStatus?.grace_expired
+
+  const fetchStatus = async () => {
+    try {
+      const [s, ls] = await Promise.all([
+        backupApi.status().catch(() => null),
+        authApi.status().catch(() => null),
+      ])
+      setStatus(s)
+      setLicenceStatus(ls)
+    } catch (err: any) {
+      console.warn('Backup status failed:', err.message)
+    }
+  }
+
+  useEffect(() => {
+    fetchStatus()
+  }, [])
+
+  const handleBackup = async () => {
+    setLoading(true)
+    try {
+      const electron = (window as any).electron
+      if (electron?.backup?.create) {
+        const result = await electron.backup.create()
+        if (result.success) {
+          addToast(`Backup saved to ${result.path}`, 'success')
+          await fetchStatus()
+        } else {
+          addToast(result.error || 'Backup failed', 'error')
+        }
+      } else {
+        addToast('Backup not available in browser mode', 'info')
+      }
+    } catch (err: any) {
+      addToast(err.message || 'Backup failed', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRestore = async () => {
+    const electron = (window as any).electron
+    if (!electron?.fs?.selectFile) {
+      addToast('Restore not available in browser mode', 'info')
+      return
+    }
+    const result = await electron.fs.selectFile({
+      filters: [{ name: 'SQLite Database', extensions: ['db'] }],
+    })
+    if (!result?.paths?.[0]) return
+
+    setLoading(true)
+    try {
+      const res = await electron.backup.restore(result.paths[0])
+      if (res.success) {
+        addToast('Database restored successfully. Please restart the app.', 'success')
+      } else {
+        addToast(res.error || 'Restore failed', 'error')
+      }
+    } catch (err: any) {
+      addToast(err.message || 'Restore failed', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   return (
     <div className="bg-white border border-border rounded-xl p-5 shadow-sm max-w-[680px]">
       <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
         <Database className="w-[18px] h-[18px]" /> Backup & Sync
       </h3>
-      <ToggleItem label="Auto-backup to cloud" desc="Automatically backup data every 24 hours" checked={true} onChange={() => {}} />
-      <ToggleItem label="Sync across devices" desc="Keep data synchronized on all your devices" checked={true} onChange={() => {}} />
+
+      {licenceLocked && (
+        <div className="bg-danger-50 border border-danger/20 rounded-lg p-3 mb-4 text-sm text-danger">
+          Backup is unavailable while your license is locked. Please renew your license.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">Database Size</div>
+          <div className="text-sm font-semibold text-slate-900">{status ? formatBytes(status.db_size_bytes) : '—'}</div>
+        </div>
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">Last Backup</div>
+          <div className="text-sm font-semibold text-slate-900">
+            {status?.last_backup_at ? new Date(status.last_backup_at).toLocaleString() : 'Never'}
+          </div>
+        </div>
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">Next Backup Due</div>
+          <div className="text-sm font-semibold text-slate-900">
+            {status?.next_backup_due ? new Date(status.next_backup_due).toLocaleDateString() : '—'}
+          </div>
+        </div>
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">Database Path</div>
+          <div className="text-sm font-semibold text-slate-900 truncate" title={status?.db_path}>{status?.db_path ? status.db_path.split('/').pop() : '—'}</div>
+        </div>
+      </div>
+
       <div className="mt-4 flex gap-2">
-        <Button onClick={() => addToast('Backup started...', 'info')}>Backup Now</Button>
-        <Button variant="outline" onClick={() => addToast('Restore feature coming soon', 'info')}>Restore</Button>
+        <Button onClick={handleBackup} disabled={loading || licenceLocked}>
+          <Download className="w-4 h-4 mr-1.5" />
+          {loading ? 'Working...' : 'Backup Now'}
+        </Button>
+        <Button variant="outline" onClick={handleRestore} disabled={loading || licenceLocked}>
+          <Upload className="w-4 h-4 mr-1.5" />
+          Restore
+        </Button>
       </div>
     </div>
   )
 }
 
 /* ===================== LICENSE TAB ===================== */
-function LicenseTab({ licenseKey, demoMode, addToast }: any) {
+function LicenseTab({ licenseKey, demoMode, addToast }: { licenseKey: string; demoMode: boolean; addToast: any }) {
+  const [state, setState] = useState<{
+    is_activated?: boolean
+    license_key?: string
+    demo_mode?: boolean
+  } | null>(null)
+  const [status, setStatus] = useState<{
+    valid?: boolean
+    access_expired?: boolean
+    refresh_expired?: boolean
+    grace_expired?: boolean
+    days_until_lock?: number
+    message?: string
+  } | null>(null)
+  const [checking, setChecking] = useState(false)
+
+  const fetchLicenseInfo = async () => {
+    try {
+      const [s, st] = await Promise.all([
+        authApi.state(),
+        authApi.status(),
+      ])
+      setState(s)
+      setStatus(st)
+    } catch (err: any) {
+      addToast('Failed to fetch license info', 'error')
+    }
+  }
+
+  useEffect(() => {
+    fetchLicenseInfo()
+  }, [])
+
+  const handleVerify = async () => {
+    setChecking(true)
+    try {
+      await fetchLicenseInfo()
+      addToast(status?.valid ? 'License is valid' : 'License issue detected', status?.valid ? 'success' : 'warning')
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const handleRenew = async () => {
+    setChecking(true)
+    try {
+      await authApi.refresh()
+      await fetchLicenseInfo()
+      addToast('License renewed successfully', 'success')
+    } catch (err: any) {
+      addToast(err.message || 'Renewal failed', 'error')
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const isLocked = !status?.valid && !!status?.grace_expired
+  const displayKey = demoMode ? 'DEMO-MODE-XXXX' : (state?.license_key || licenseKey || '—')
+  const displayPlan = demoMode ? 'Demo' : (status?.valid ? 'Professional' : '—')
+  const displayStatus = isLocked ? 'Locked' : status?.grace_expired ? 'Grace period' : status?.access_expired ? 'Token expired' : status?.valid ? 'Active' : 'Inactive'
+  const statusColor = isLocked ? 'text-danger' : status?.access_expired || status?.refresh_expired ? 'text-warning' : 'text-success'
+
   return (
     <div className="bg-white border border-border rounded-xl p-5 shadow-sm max-w-[680px]">
       <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
         <KeyRound className="w-[18px] h-[18px]" /> License Information
       </h3>
+
+      {isLocked && (
+        <div className="bg-danger-50 border border-danger/20 rounded-lg p-3 mb-4 text-sm text-danger">
+          Your license is locked. Please renew to restore full functionality.
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500">License Key</label>
-          <Input value={demoMode ? 'DEMO-MODE-XXXX' : licenseKey || ''} readOnly className="bg-slate-50 text-slate-500" />
+          <Input value={displayKey} readOnly className="bg-slate-50 text-slate-500" />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500">Plan</label>
-          <Input value={demoMode ? 'Demo (14 days)' : 'Professional (Annual)'} readOnly className="bg-slate-50 text-slate-500" />
+          <Input value={displayPlan} readOnly className="bg-slate-50 text-slate-500" />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-500">Expires On</label>
-          <Input value="December 31, 2026" readOnly className="bg-slate-50 text-slate-500" />
+          <label className="text-xs font-semibold text-slate-500">Status</label>
+          <div className="flex items-center gap-2 bg-slate-50 border border-border rounded-md px-3 py-2">
+            <span className={`w-2 h-2 rounded-full ${isLocked ? 'bg-danger' : status?.access_expired || status?.refresh_expired ? 'bg-warning' : 'bg-success'}`} />
+            <span className={`text-sm font-medium ${statusColor}`}>{displayStatus}</span>
+            {status?.days_until_lock !== undefined && status.days_until_lock !== null && (
+              <span className="text-xs text-slate-400">({status.days_until_lock} days until lock)</span>
+            )}
+          </div>
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button onClick={() => addToast('License validated successfully', 'success')}>Verify License</Button>
-        <Button variant="outline" onClick={() => addToast('Contact support for renewal', 'info')}>Renew License</Button>
+        <Button onClick={handleVerify} disabled={checking}>Verify License</Button>
+        <Button variant="outline" onClick={handleRenew} disabled={checking || demoMode}>Renew License</Button>
       </div>
     </div>
   )

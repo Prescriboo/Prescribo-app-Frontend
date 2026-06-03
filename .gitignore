@@ -54,4 +54,5 @@ thumb
 sketch
 /prescribo-app-backend
 /dist
+/prescribo_astro_supabase
 # End of https://www.toptal.com/developers/gitignore/api/react,nextjs

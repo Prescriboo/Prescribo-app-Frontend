@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { checkApiHealth, isElectron, setApiBaseUrl, getApiBaseUrl } from '@/lib/api-config'
-import { patientsApi, prescriptionsApi, settingsApi, autocompleteApi, mastersApi, patientHistoryApi } from '@/lib/api'
+import { patientsApi, prescriptionsApi, settingsApi, autocompleteApi, mastersApi, patientHistoryApi, authApi } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
 import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useSettingsStore } from '@/stores/settings-store'
@@ -100,7 +101,7 @@ export function useApiSync(): UseApiSyncReturn {
     try {
       if (isElectron()) {
         const electronUrl = await (window as any).electron?.api?.getUrl?.()
-        if (electronUrl && electronUrl !== getApiBaseUrl()) {
+        if (electronUrl && electronUrl !== await getApiBaseUrl()) {
           setApiBaseUrl(electronUrl)
         }
       }
@@ -118,6 +119,14 @@ export function useApiSync(): UseApiSyncReturn {
       setBackendVersion(health.version)
       setLastError(undefined)
       setAllApiAvailable(true)
+
+      // Hydrate auth state from backend
+      try {
+        const authState = await authApi.state()
+        useAuthStore.getState().hydrateFromApi(authState)
+      } catch (e: any) {
+        console.warn('Auth hydration failed:', e.message)
+      }
 
       // Sync patients
       try {

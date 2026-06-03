@@ -85,10 +85,18 @@ export function Sidebar() {
       {!sidebarCollapsed && (
         <div className="mt-auto pt-4 border-t border-border text-center">
           <div className="text-[0.7rem] text-slate-400 font-medium">Prescribo v2.4.1</div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-success-50 text-success rounded-full text-[0.75rem] font-bold mt-2 border border-green-200">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-bold mt-2 border ${demoMode ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-success-50 text-success border-green-200'}`}>
             <CheckCircle className="w-3 h-3" />
             {demoMode ? 'Demo Mode' : 'Pro License'}
           </div>
+          {demoMode && (
+            <button
+              onClick={() => router.push('/activate')}
+              className="block mx-auto mt-2 text-xs font-semibold text-primary hover:text-primary/80 hover:underline transition-colors"
+            >
+              Activate License →
+            </button>
+          )}
           <div className="text-[0.7rem] text-slate-400 mt-1.5">Last sync: Just now</div>
         </div>
       )}

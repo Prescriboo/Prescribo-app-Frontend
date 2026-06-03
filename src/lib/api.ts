@@ -5,7 +5,7 @@ import { getApiUrl } from './api-config'
 // ============================================================
 
 async function http<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(getApiUrl(path), {
+  const res = await fetch(await getApiUrl(path), {
     headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
     ...options,
   })
@@ -455,6 +455,8 @@ export const authApi = {
   skipPin: () => post<AuthState>('/api/auth/skip-pin', {}),
   logout: () => post<{ message: string }>('/api/auth/logout', {}),
   status: () => get<LicenceStatus>('/api/auth/status'),
+  refresh: () => post<AuthState>('/api/auth/refresh', {}),
+  reactivate: () => post<AuthState>('/api/auth/reactivate', {}),
   machineId: () => get<{ machine_id: string }>('/api/auth/machine-id'),
 }
 

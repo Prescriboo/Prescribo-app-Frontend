@@ -6,22 +6,28 @@ export function setApiBaseUrl(url: string) {
   _apiBaseUrl = url
 }
 
-export function getApiBaseUrl(): string {
+export async function getApiBaseUrl(): Promise<string> {
   if (_apiBaseUrl) return _apiBaseUrl
 
   // In browser (dev mode or if backend is manually running)
   if (typeof window !== 'undefined') {
     // Check if Electron exposed a backend URL
     const electronUrl = (window as any).electron?.api?.getUrl?.()
-    if (electronUrl) return electronUrl
+    if (electronUrl) {
+      const resolved = await Promise.resolve(electronUrl)
+      if (resolved) {
+        _apiBaseUrl = resolved
+        return resolved
+      }
+    }
   }
 
   // Fallback to environment variable or default
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 }
 
-export function getApiUrl(path: string): string {
-  const base = getApiBaseUrl()
+export async function getApiUrl(path: string): Promise<string> {
+  const base = await getApiBaseUrl()
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   return `${base}${cleanPath}`
 }
@@ -35,7 +41,7 @@ export interface ApiHealth {
 
 export async function checkApiHealth(): Promise<ApiHealth> {
   try {
-    const res = await fetch(getApiUrl('/health'), {
+    const res = await fetch(await getApiUrl('/health'), {
       method: 'GET',
       signal: AbortSignal.timeout(3000),
     })

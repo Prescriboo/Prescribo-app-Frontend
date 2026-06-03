@@ -1,14 +1,16 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/stores/auth-store'
 import { usePatientStore } from '@/stores/patient-store'
 import { usePrescriptionStore } from '@/stores/prescription-store'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, UserPlus, LayoutTemplate, Settings, TrendingUp, FileText, AlertCircle } from 'lucide-react'
+import { Plus, UserPlus, LayoutTemplate, Settings, TrendingUp, FileText, AlertCircle, Zap } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { demoMode } = useAuthStore()
   const { patients } = usePatientStore()
   const { prescriptions } = usePrescriptionStore()
 
@@ -23,6 +25,28 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
+      {demoMode && (
+        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <Zap className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-800">You're in Demo Mode</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Demo expires in 7 days. Activate a license key to unlock full features.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold flex-shrink-0"
+            onClick={() => router.push('/activate')}
+          >
+            Activate License
+          </Button>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-5 mb-5">
         {stats.map((stat, i) => (
           <Card key={i} className="p-5 hover:-translate-y-1 hover:shadow-md transition-all relative overflow-hidden group">

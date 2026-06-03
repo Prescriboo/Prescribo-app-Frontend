@@ -53,6 +53,11 @@ contextBridge.exposeInMainWorld('electron', {
     validate: (key) => ipcRenderer.invoke('license:validate', key),
     getInfo: () => ipcRenderer.invoke('license:getInfo'),
     activate: (key) => ipcRenderer.invoke('license:activate', key),
+    onStatusChanged: (callback) => {
+      const handler = (_event, status) => callback(status)
+      ipcRenderer.on('license:status', handler)
+      return () => ipcRenderer.removeListener('license:status', handler)
+    },
   },
 
   // Backup

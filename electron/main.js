@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, screen } = require('electron
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
+const http = require('http')
 
 // IPC Handlers
 require('./ipc-handlers/api')
@@ -13,10 +14,11 @@ require('./ipc-handlers/backup')
 require('./ipc-handlers/fs')
 
 const { startBackend, stopBackend } = require('./backend-spawner')
-const { setBackendUrl } = require('./ipc-handlers/api')
+const { setBackendUrl, getBackendUrl } = require('./ipc-handlers/api')
 
 let mainWindow
 let splashWindow
+let licenseGuardianInterval = null
 
 const isDev = !app.isPackaged
 const isMac = process.platform === 'darwin'
@@ -47,6 +49,98 @@ function saveWindowState() {
     fs.mkdirSync(path.dirname(windowStatePath), { recursive: true })
     fs.writeFileSync(windowStatePath, JSON.stringify(state))
   } catch (e) {}
+}
+
+// ===================== LICENSE GUARDIAN =====================
+function apiGet(path) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, getBackendUrl())
+    const req = http.get(url, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)) } catch { resolve(data) }
+      })
+    })
+    req.on('error', reject)
+    req.setTimeout(10000, () => { req.destroy(); reject(new Error('timeout')) })
+  })
+}
+
+function apiPost(path, body) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, getBackendUrl())
+    const postData = JSON.stringify(body)
+    const options = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+      timeout: 15000,
+    }
+    const req = http.request(options, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)) } catch { resolve(data) }
+      })
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    req.write(postData)
+    req.end()
+  })
+}
+
+async function checkAndRefreshLicense() {
+  try {
+    const status = await apiGet('/api/auth/status')
+    // Push status to renderer regardless
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('license:status', status)
+    }
+
+    // Auto-refresh if access expired but refresh still valid
+    if (status.access_expired && !status.refresh_expired && !status.grace_expired) {
+      console.log('[LicenseGuardian] Access token expired, refreshing...')
+      try {
+        await apiPost('/api/auth/refresh', {})
+        const refreshed = await apiGet('/api/auth/status')
+        console.log('[LicenseGuardian] Token refresh successful')
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('license:status', refreshed)
+        }
+      } catch (refreshErr) {
+        console.warn('[LicenseGuardian] Token refresh failed:', refreshErr.message)
+      }
+    }
+
+    return status
+  } catch (err) {
+    console.warn('[LicenseGuardian] Status check failed:', err.message)
+    return null
+  }
+}
+
+function startLicenseGuardian() {
+  if (licenseGuardianInterval) return
+  console.log('[LicenseGuardian] Starting...')
+  // Check immediately on start
+  checkAndRefreshLicense()
+  // Then every 30 minutes
+  licenseGuardianInterval = setInterval(checkAndRefreshLicense, 30 * 60 * 1000)
+}
+
+function stopLicenseGuardian() {
+  if (licenseGuardianInterval) {
+    clearInterval(licenseGuardianInterval)
+    licenseGuardianInterval = null
+    console.log('[LicenseGuardian] Stopped')
+  }
 }
 
 // ===================== SPLASH SCREEN =====================
@@ -243,6 +337,11 @@ app.whenReady().then(async () => {
     setBackendUrl(process.env.API_URL || 'http://localhost:8000')
   }
 
+  // Wait a moment for backend to be fully ready, then start license guardian
+  setTimeout(() => {
+    startLicenseGuardian()
+  }, 2000)
+
   setTimeout(createMainWindow, 800)
 })
 
@@ -259,7 +358,14 @@ app.on('activate', () => {
 // macOS: hide instead of quit
 app.on('before-quit', () => {
   saveWindowState()
+  stopLicenseGuardian()
   stopBackend()
+})
+
+// Online/offline awareness
+app.on('ready', () => {
+  // Electron doesn't have a global online event, but we can use system network events
+  // For now, we rely on the periodic guardian check
 })
 
 // Single instance lock

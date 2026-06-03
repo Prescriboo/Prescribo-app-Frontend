@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/top-bar'
 import { TitleBar } from '@/components/layout/title-bar'
 import { StatusBar } from '@/components/layout/status-bar'
+import { LicenseLockScreen } from '@/components/layout/license-lock-screen'
 import { ToastContainer } from '@/components/ui/toast'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Bottom: Status bar */}
       <StatusBar />
+
+      {/* License lock overlay */}
+      <LicenseLockScreen />
     </div>
   )
 }

@@ -4,24 +4,49 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
+import { Loader2 } from 'lucide-react'
 
 export default function PinPage() {
   const router = useRouter()
   const { setPin, skipPin } = useAuthStore()
   const { addToast } = useUIStore()
   const [pinValue, setPinValue] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const enterDigit = (digit: number) => {
     if (pinValue.length < 4) {
       const newPin = pinValue + digit
       setPinValue(newPin)
       if (newPin.length === 4) {
-        setTimeout(() => {
-          setPin(newPin)
-          addToast('PIN set successfully', 'success')
-          setTimeout(() => router.push('/dashboard'), 400)
-        }, 200)
+        setTimeout(() => handleSetPin(newPin), 200)
       }
+    }
+  }
+
+  const handleSetPin = async (finalPin: string) => {
+    setLoading(true)
+    try {
+      await setPin(finalPin)
+      addToast('PIN set successfully', 'success')
+      setTimeout(() => router.push('/dashboard'), 400)
+    } catch (err: any) {
+      addToast(err.message || 'Failed to set PIN', 'error')
+      setPinValue('')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSkip = async () => {
+    setLoading(true)
+    try {
+      await skipPin()
+      addToast('PIN setup skipped', 'info')
+      router.push('/dashboard')
+    } catch (err: any) {
+      addToast(err.message || 'Failed to skip PIN', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -53,18 +78,19 @@ export default function PinPage() {
         {digits.map((d) => (
           <button
             key={d}
-            className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all"
+            className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all disabled:opacity-50"
             onClick={() => enterDigit(d)}
+            disabled={loading}
           >
             {d}
           </button>
         ))}
-        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-sm font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all" onClick={clear}>CLR</button>
-        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all" onClick={() => enterDigit(0)}>0</button>
-        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all" onClick={backspace}>&#x232B;</button>
+        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-sm font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all disabled:opacity-50" onClick={clear} disabled={loading}>CLR</button>
+        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all disabled:opacity-50" onClick={() => enterDigit(0)} disabled={loading}>0</button>
+        <button className="pin-key w-20 h-20 rounded-full border border-border bg-white text-xl font-semibold flex items-center justify-center hover:bg-primary-50 hover:border-primary-light hover:text-primary hover:scale-105 active:scale-90 active:bg-primary active:text-white transition-all disabled:opacity-50" onClick={backspace} disabled={loading}>&#x232B;</button>
       </div>
-      <button className="mt-8 text-sm text-slate-400 hover:text-primary underline underline-offset-4 bg-transparent border-none cursor-pointer" onClick={() => { skipPin(); addToast('PIN setup skipped', 'info'); router.push('/dashboard') }}>
-        Skip for now
+      <button className="mt-8 text-sm text-slate-400 hover:text-primary underline underline-offset-4 bg-transparent border-none cursor-pointer disabled:opacity-50" onClick={handleSkip} disabled={loading}>
+        {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : 'Skip for now'}
       </button>
     </div>
   )
