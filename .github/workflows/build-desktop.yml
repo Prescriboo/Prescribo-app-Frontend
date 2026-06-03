@@ -38,19 +38,19 @@ jobs:
       # =================================================================
       # 1. CHECKOUT REPOSITORIES
       # =================================================================
-      # The Electron repo checks out into ./prescribo-nextjs/
-      - name: Checkout Electron Repo
+      # Checkout the Electron/Next.js frontend repo into ./prescribo-nextjs/
+      - name: Checkout Frontend Repo
         uses: actions/checkout@v4
         with:
-          path: Prescribo-app-Frontend
+          path: prescribo-nextjs
 
-      # The backend repo checks out into ./prescribo-app-backend/ (sibling)
-      # This matches your local dev structure and what electron-builder.yml expects.
-      # TODO: Update the repository path below to your actual backend repo.
+      # Checkout the backend repo into ./prescribo-app-backend/ (sibling)
+      # Uses a PAT so it works with private repos across different repos.
       - name: Checkout Backend Repo
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/prescribo-app-backend
+          token: ${{ secrets.PAT_TOKEN }}
           path: prescribo-app-backend
 
       # =================================================================
@@ -104,8 +104,6 @@ jobs:
         working-directory: prescribo-nextjs
         run: npm ci
 
-      # We only run the Next.js build here. The backend is already built above
-      # and electron-builder.yml will pick it up from ../prescribo-app-backend/dist/
       - name: Build Next.js Frontend
         working-directory: prescribo-nextjs
         run: npm run build
@@ -113,9 +111,6 @@ jobs:
       # =================================================================
       # 4. PACKAGE ELECTRON
       # =================================================================
-      # CSC_IDENTITY_AUTO_DISCOVERY=false skips code signing.
-      # For signed macOS/Windows builds, add your certificates to GitHub Secrets
-      # and remove this line.
       - name: Package Electron
         working-directory: prescribo-nextjs
         env:
@@ -146,7 +141,6 @@ jobs:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    # Run automatically on version tags, or manually if requested
     if: |
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
       inputs.create_release == true
