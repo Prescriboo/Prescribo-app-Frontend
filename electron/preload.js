@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('electron', {
   backup: {
     create: () => ipcRenderer.invoke('backup:create'),
     restore: (filePath) => ipcRenderer.invoke('backup:restore', filePath),
+    restoreCloud: (presignedUrl) => ipcRenderer.invoke('backup:restoreCloud', presignedUrl),
     getPath: () => ipcRenderer.invoke('backup:getPath'),
   },
 

@@ -14,7 +14,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 
 import { useUIStore } from '@/stores/ui-store'
-import { autocompleteApi, backupApi, authApi, mastersApi, type AuthState, type LicenceStatus } from '@/lib/api'
+import { autocompleteApi, backupApi, cloudBackupApi, authApi, mastersApi, type AuthState, type LicenceStatus } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,9 +22,9 @@ import { Modal } from '@/components/ui/modal'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
-  Building, Shield, Pill, Database, KeyRound,
+  Building, Shield, Pill, Database, KeyRound, Cloud,
   Search, Plus, Trash2, Trash, Pencil, X, FileText, Download, Save, Upload,
-  ListChecks, Clock, Calendar, UserRound, LayoutTemplate, RefreshCw
+  ListChecks, Clock, Calendar, UserRound, LayoutTemplate, RefreshCw, CloudUpload, CloudDownload
 } from 'lucide-react'
 
 const tabs = [
@@ -926,6 +926,9 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
     grace_expired?: boolean
   } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [cloudBackups, setCloudBackups] = useState<any[]>([])
+  const [cloudLoading, setCloudLoading] = useState(false)
+  const [cloudUploading, setCloudUploading] = useState(false)
 
   const licenceLocked = !licenceStatus?.valid && !!licenceStatus?.grace_expired
 
@@ -942,8 +945,22 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
     }
   }
 
+  const fetchCloudBackups = async () => {
+    setCloudLoading(true)
+    try {
+      const data = await cloudBackupApi.list()
+      setCloudBackups(data.backups || [])
+    } catch (err: any) {
+      console.warn('Cloud backup list failed:', err.message)
+      setCloudBackups([])
+    } finally {
+      setCloudLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchStatus()
+    fetchCloudBackups()
   }, [])
 
   const handleBackup = async () => {
@@ -994,6 +1011,85 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
     }
   }
 
+  const handleCloudUpload = async () => {
+    setCloudUploading(true)
+    try {
+      // Step 1: Get presigned URL
+      const uploadInfo = await cloudBackupApi.presignedUpload({
+        size_bytes: status?.db_size_bytes || 0,
+        device_name: (window as any).electron?.os?.platform || 'unknown',
+        app_version: (window as any).electron?.getVersion?.() || '',
+      })
+
+      // Step 2: Download compressed DB from local backend
+      const blob = await backupApi.downloadCompressed()
+
+      // Step 3: Upload to presigned URL
+      const uploadRes = await fetch(uploadInfo.presigned_url, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': 'application/gzip' },
+      })
+
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed: ${uploadRes.status}`)
+      }
+
+      // Step 4: Confirm upload
+      await cloudBackupApi.confirmUpload({
+        backup_id: uploadInfo.backup_id,
+        size_bytes: blob.size,
+      })
+
+      addToast('Cloud backup uploaded successfully', 'success')
+      await fetchCloudBackups()
+    } catch (err: any) {
+      addToast(err.message || 'Cloud upload failed', 'error')
+    } finally {
+      setCloudUploading(false)
+    }
+  }
+
+  const handleCloudRestore = async (backup: any) => {
+    setLoading(true)
+    try {
+      const electron = (window as any).electron
+      if (!electron?.backup?.restoreCloud) {
+        addToast('Cloud restore not available in browser mode', 'info')
+        return
+      }
+
+      // Step 1: Get presigned download URL
+      const downloadInfo = await cloudBackupApi.presignedDownload(backup.id)
+
+      // Step 2: Electron main process downloads, decompresses, and restores
+      const restoreRes = await electron.backup.restoreCloud(downloadInfo.presigned_url)
+      if (restoreRes.success) {
+        addToast('Database restored from cloud. Please restart the app.', 'success')
+      } else {
+        addToast(restoreRes.error || 'Cloud restore failed', 'error')
+      }
+    } catch (err: any) {
+      addToast(err.message || 'Cloud restore failed', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCloudDelete = async (backupId: string) => {
+    if (!confirm('Delete this cloud backup? This cannot be undone.')) return
+    setCloudLoading(true)
+    try {
+      await cloudBackupApi.delete(backupId)
+      addToast('Cloud backup deleted', 'success')
+      await fetchCloudBackups()
+    } catch (err: any) {
+      addToast(err.message || 'Delete failed', 'error')
+    } finally {
+      setCloudLoading(false)
+    }
+  }
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B'
     const k = 1024
@@ -1003,49 +1099,132 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
   }
 
   return (
-    <div className="bg-white border border-border rounded-xl p-5 shadow-sm max-w-[680px]">
-      <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
-        <Database className="w-[18px] h-[18px]" /> Backup & Sync
-      </h3>
+    <div className="space-y-6 max-w-[680px]">
+      {/* Local Backup */}
+      <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
+          <Database className="w-[18px] h-[18px]" /> Local Backup
+        </h3>
 
-      {licenceLocked && (
-        <div className="bg-danger-50 border border-danger/20 rounded-lg p-3 mb-4 text-sm text-danger">
-          Backup is unavailable while your license is locked. Please renew your license.
-        </div>
-      )}
+        {licenceLocked && (
+          <div className="bg-danger-50 border border-danger/20 rounded-lg p-3 mb-4 text-sm text-danger">
+            Backup is unavailable while your license is locked. Please renew your license.
+          </div>
+        )}
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xs text-slate-500 mb-1">Database Size</div>
-          <div className="text-sm font-semibold text-slate-900">{status ? formatBytes(status.db_size_bytes) : '—'}</div>
-        </div>
-        <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xs text-slate-500 mb-1">Last Backup</div>
-          <div className="text-sm font-semibold text-slate-900">
-            {status?.last_backup_at ? new Date(status.last_backup_at).toLocaleString() : 'Never'}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="text-xs text-slate-500 mb-1">Database Size</div>
+            <div className="text-sm font-semibold text-slate-900">{status ? formatBytes(status.db_size_bytes) : '—'}</div>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="text-xs text-slate-500 mb-1">Last Backup</div>
+            <div className="text-sm font-semibold text-slate-900">
+              {status?.last_backup_at ? new Date(status.last_backup_at).toLocaleString() : 'Never'}
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="text-xs text-slate-500 mb-1">Next Backup Due</div>
+            <div className="text-sm font-semibold text-slate-900">
+              {status?.next_backup_due ? new Date(status.next_backup_due).toLocaleDateString() : '—'}
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="text-xs text-slate-500 mb-1">Database Path</div>
+            <div className="text-sm font-semibold text-slate-900 truncate" title={status?.db_path}>{status?.db_path ? status.db_path.split('/').pop() : '—'}</div>
           </div>
         </div>
-        <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xs text-slate-500 mb-1">Next Backup Due</div>
-          <div className="text-sm font-semibold text-slate-900">
-            {status?.next_backup_due ? new Date(status.next_backup_due).toLocaleDateString() : '—'}
-          </div>
-        </div>
-        <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xs text-slate-500 mb-1">Database Path</div>
-          <div className="text-sm font-semibold text-slate-900 truncate" title={status?.db_path}>{status?.db_path ? status.db_path.split('/').pop() : '—'}</div>
+
+        <div className="flex gap-2">
+          <Button onClick={handleBackup} disabled={loading || licenceLocked}>
+            <Download className="w-4 h-4 mr-1.5" />
+            {loading ? 'Working...' : 'Backup Now'}
+          </Button>
+          <Button variant="outline" onClick={handleRestore} disabled={loading || licenceLocked}>
+            <Upload className="w-4 h-4 mr-1.5" />
+            Restore
+          </Button>
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <Button onClick={handleBackup} disabled={loading || licenceLocked}>
-          <Download className="w-4 h-4 mr-1.5" />
-          {loading ? 'Working...' : 'Backup Now'}
-        </Button>
-        <Button variant="outline" onClick={handleRestore} disabled={loading || licenceLocked}>
-          <Upload className="w-4 h-4 mr-1.5" />
-          Restore
-        </Button>
+      {/* Cloud Backup */}
+      <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
+          <Cloud className="w-[18px] h-[18px]" /> Cloud Backup
+        </h3>
+
+        {demoMode && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
+            Cloud backup requires an active license. Please activate your license to use cloud backup.
+          </div>
+        )}
+
+        <div className="flex gap-2 mb-4">
+          <Button onClick={handleCloudUpload} disabled={cloudUploading || demoMode || licenceLocked}>
+            <CloudUpload className="w-4 h-4 mr-1.5" />
+            {cloudUploading ? 'Uploading...' : 'Upload to Cloud'}
+          </Button>
+          <Button variant="outline" onClick={fetchCloudBackups} disabled={cloudLoading || demoMode}>
+            <RefreshCw className={`w-4 h-4 mr-1.5 ${cloudLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {cloudBackups.length === 0 && !cloudLoading && (
+          <p className="text-sm text-slate-400 text-center py-4">No cloud backups yet</p>
+        )}
+
+        {cloudBackups.length > 0 && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-border">
+                <tr>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-slate-500">Date</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-slate-500">Size</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-slate-500">Device</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-slate-500">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {cloudBackups.map((b) => (
+                  <tr key={b.id} className="hover:bg-slate-50/50">
+                    <td className="px-3 py-2 text-slate-700">
+                      {new Date(b.created_at).toLocaleDateString()} {' '}
+                      <span className="text-slate-400 text-xs">
+                        {new Date(b.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-700">{formatBytes(b.size_bytes)}</td>
+                    <td className="px-3 py-2 text-slate-700 text-xs">{b.device_name || '—'}</td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCloudRestore(b)}
+                          disabled={loading}
+                          className="h-7 px-2 text-xs text-brand-600 hover:text-brand-700 hover:bg-brand-50"
+                        >
+                          <CloudDownload className="w-3.5 h-3.5 mr-1" />
+                          Restore
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCloudDelete(b.id)}
+                          disabled={cloudLoading}
+                          className="h-7 px-2 text-xs text-danger hover:text-danger hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

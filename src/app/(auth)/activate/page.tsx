@@ -212,7 +212,7 @@ export default function ActivatePage() {
         Continue in Demo Mode
       </Button>
 
-      <p className="mt-4 text-xs text-slate-400">Trial mode available for 14 days</p>
+      <p className="mt-4 text-xs text-slate-400">Trial mode available for 7 days</p>
 
       {/* Contact Admin Support Modal */}
       <Modal

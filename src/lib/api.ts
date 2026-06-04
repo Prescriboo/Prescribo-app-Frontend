@@ -291,6 +291,35 @@ export interface BackupStatus {
   db_size_bytes: number
 }
 
+export interface CloudBackup {
+  id: string
+  user_id: string
+  license_id: string | null
+  file_name: string
+  storage_path: string
+  size_bytes: number
+  device_name: string | null
+  app_version: string | null
+  created_at: string
+}
+
+export interface CloudBackupListResponse {
+  backups: CloudBackup[]
+}
+
+export interface PresignedUploadResponse {
+  backup_id: string
+  presigned_url: string
+  storage_path: string
+  token: string
+  expires_at: string
+}
+
+export interface PresignedDownloadResponse {
+  presigned_url: string
+  expires_at: string
+}
+
 export interface ActivityLogEntry {
   id: number
   event_type: string
@@ -503,6 +532,18 @@ export const backupApi = {
   download: () => get<Blob>('/api/backup/download'),
   downloadCompressed: () => get<Blob>('/api/backup/download-compressed'),
   markUploaded: () => post<{ message: string; timestamp: string }>('/api/backup/mark-uploaded', {}),
+}
+
+export const cloudBackupApi = {
+  presignedUpload: (data: { size_bytes?: number; device_name?: string; app_version?: string }) =>
+    post<PresignedUploadResponse>('/api/backup/cloud-upload', data),
+  confirmUpload: (data: { backup_id: string; size_bytes?: number }) =>
+    post<{ success: boolean; backup: CloudBackup }>('/api/backup/cloud-upload-complete', data),
+  list: () => get<CloudBackupListResponse>('/api/backup/cloud-list'),
+  presignedDownload: (backupId: string) =>
+    get<PresignedDownloadResponse>(`/api/backup/cloud-download?backup_id=${backupId}`),
+  delete: (backupId: string) =>
+    del<{ success: boolean }>(`/api/backup/cloud?backup_id=${backupId}`),
 }
 
 // ============================================================

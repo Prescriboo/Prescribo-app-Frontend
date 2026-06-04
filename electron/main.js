@@ -384,6 +384,59 @@ function createMainWindow() {
     shell.openExternal(url)
   })
 
+  // Exit confirmation with backup prompt
+  let isQuitting = false
+  mainWindow.on('close', async (e) => {
+    if (isQuitting) return
+    e.preventDefault()
+
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      buttons: ['Take Backup & Exit', 'Exit Without Backup', 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+      title: 'Exit Prescribo',
+      message: 'Are you sure you want to exit?',
+      detail: 'Would you like to take an offline backup before closing?',
+      icon: path.join(__dirname, '../resources/icon.png'),
+    })
+
+    if (choice === 2) {
+      // Cancel — do nothing
+      return
+    }
+
+    if (choice === 0) {
+      // Take Backup & Exit
+      try {
+        const { downloadFile } = require('./ipc-handlers/backup')
+        const BACKUP_DIR = path.join(os.homedir(), '.prescribo', 'backups')
+        if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true })
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const backupPath = path.join(BACKUP_DIR, `prescribo_backup_${timestamp}.db`)
+        await downloadFile('/api/backup/download', backupPath)
+        console.log('[Exit] Backup saved to:', backupPath)
+      } catch (err) {
+        console.error('[Exit] Backup failed:', err.message)
+        const proceed = dialog.showMessageBoxSync(mainWindow, {
+          type: 'warning',
+          buttons: ['Exit Anyway', 'Cancel'],
+          defaultId: 1,
+          cancelId: 1,
+          title: 'Backup Failed',
+          message: 'Could not create backup.',
+          detail: err.message,
+        })
+        if (proceed === 1) return
+      }
+    }
+
+    // Exit
+    isQuitting = true
+    saveWindowState()
+    mainWindow.destroy()
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })

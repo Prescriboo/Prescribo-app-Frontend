@@ -1,5 +1,5 @@
 const { autoUpdater } = require('electron-updater')
-const { ipcMain, dialog } = require('electron')
+const { ipcMain, dialog, app } = require('electron')
 
 // Auto-updater configuration
 // Requires GitHub releases with proper publish config in electron-builder.yml
@@ -19,11 +19,34 @@ function sendStatusToWindow(status, data = {}) {
   }
 }
 
+// IPC handlers — always registered so the renderer never gets
+// "No handler registered for 'updater:check'"
+ipcMain.handle('updater:check', async () => {
+  if (!app.isPackaged || process.env.NODE_ENV === 'development') {
+    return { success: false, error: 'Updater not available in development mode' }
+  }
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { success: true, updateInfo: result?.updateInfo || null }
+  } catch (err) {
+    console.error('[AutoUpdater] Manual check failed:', err.message)
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle('updater:install', () => {
+  if (!app.isPackaged || process.env.NODE_ENV === 'development') {
+    console.log('[AutoUpdater] Install skipped — development mode')
+    return
+  }
+  autoUpdater.quitAndInstall(false, true)
+})
+
 function initAutoUpdater(window) {
   mainWindow = window
 
   // Don't check for updates in development
-  if (process.env.NODE_ENV === 'development' || !require('electron').app.isPackaged) {
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
     console.log('[AutoUpdater] Skipping — development mode')
     return
   }
@@ -95,25 +118,10 @@ function initAutoUpdater(window) {
         }
       })
   })
-
-  // IPC handlers
-  ipcMain.handle('updater:check', async () => {
-    try {
-      const result = await autoUpdater.checkForUpdates()
-      return { success: true, updateInfo: result?.updateInfo || null }
-    } catch (err) {
-      console.error('[AutoUpdater] Manual check failed:', err.message)
-      return { success: false, error: err.message }
-    }
-  })
-
-  ipcMain.handle('updater:install', () => {
-    autoUpdater.quitAndInstall(false, true)
-  })
 }
 
 function checkForUpdates() {
-  if (!require('electron').app.isPackaged) {
+  if (!app.isPackaged) {
     console.log('[AutoUpdater] Skipping check — not packaged')
     return
   }

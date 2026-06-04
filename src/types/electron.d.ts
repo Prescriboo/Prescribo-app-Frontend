@@ -19,6 +19,11 @@ interface ElectronUpdaterAPI {
   onError: (callback: (data: { message: string }) => void) => () => void;
 }
 
+interface ElectronPrintAPI {
+  toPDF: (htmlContent: string, options?: { pageSize?: string }) => Promise<{ success: boolean; path?: string; cancelled?: boolean; error?: string }>;
+  toPrinter: (htmlContent: string, options?: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>;
+}
+
 interface ElectronAPI {
   getVersion: () => Promise<string>;
   quit: () => Promise<void>;
@@ -28,6 +33,7 @@ interface ElectronAPI {
     getUrl: () => Promise<string>;
     isReady: () => Promise<boolean>;
   };
+  print: ElectronPrintAPI;
   updater: ElectronUpdaterAPI;
 }
 

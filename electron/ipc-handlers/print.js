@@ -1,25 +1,45 @@
-const { ipcMain, dialog } = require('electron')
+const { ipcMain, dialog, BrowserWindow } = require('electron')
 const fs = require('fs')
-const path = require('path')
 
-ipcMain.handle('print:toPDF', async (event, htmlContent, options = {}) => {
-  const { filePath } = await dialog.showSaveDialog({
+ipcMain.handle('print:toPDF', async (event, _htmlContent, options = {}) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win) return { success: false, error: 'No window found' }
+
+  const { filePath } = await dialog.showSaveDialog(win, {
     defaultPath: `prescription-${Date.now()}.pdf`,
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
   })
 
   if (!filePath) return { cancelled: true }
 
-  // TODO: Use electron's printToPDF or a library like puppeteer
-  // For now, save HTML as a placeholder
-  fs.writeFileSync(filePath.replace('.pdf', '.html'), htmlContent)
-
-  return { success: true, path: filePath }
+  try {
+    const pdfOptions = {
+      pageSize: options.pageSize || 'A4',
+      margins: { marginType: 'none' },
+      printBackground: true,
+    }
+    const data = await win.webContents.printToPDF(pdfOptions)
+    fs.writeFileSync(filePath, data)
+    return { success: true, path: filePath }
+  } catch (err) {
+    console.error('[PrintToPDF] Error:', err)
+    return { success: false, error: err.message }
+  }
 })
 
-ipcMain.handle('print:toPrinter', async (event, htmlContent, options = {}) => {
-  // TODO: Use electron's webContents.print()
-  // This would be called from the renderer via window.electron.print.toPrinter()
-  console.log('Print to printer requested')
-  return { success: true }
+ipcMain.handle('print:toPrinter', async (event, _htmlContent, options = {}) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win) return { success: false, error: 'No window found' }
+
+  try {
+    await win.webContents.print({
+      silent: false,
+      printBackground: true,
+      ...options,
+    })
+    return { success: true }
+  } catch (err) {
+    console.error('[PrintToPrinter] Error:', err)
+    return { success: false, error: err.message }
+  }
 })

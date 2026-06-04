@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { MultiAutocompleteInput } from '@/components/ui/multi-autocomplete-input'
 import { SingleAutocompleteInput } from '@/components/ui/single-autocomplete-input'
-import { RotateCcw, Save, Plus, Trash2, ArrowLeft, Printer, Pencil, Clock, FileText } from 'lucide-react'
+import { Modal } from '@/components/ui/modal'
+import { RotateCcw, Save, Plus, Trash2, ArrowLeft, Printer, Pencil, Clock, FileText, FileDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function PrescriptionsClientPage() {
@@ -42,6 +43,9 @@ export default function PrescriptionsClientPage() {
 
   const [viewMode, setViewMode] = useState(false)
   const [viewRx, setViewRx] = useState<typeof prescriptions[0] | null>(null)
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [savedRxId, setSavedRxId] = useState<number | null>(null)
+  const autoPrintTriggeredRef = useRef(false)
   const previousMedicinesRef = useRef<typeof currentRx.medicines>([])
 
   const focusNextField = () => {
@@ -80,6 +84,7 @@ export default function PrescriptionsClientPage() {
 
   // Handle view mode
   useEffect(() => {
+    autoPrintTriggeredRef.current = false
     if (viewId) {
       const rx = prescriptions.find(r => r.id === Number(viewId))
       if (rx) {
@@ -169,7 +174,7 @@ export default function PrescriptionsClientPage() {
       })
     }
 
-    await addPrescription({
+    const savedRx = await addPrescription({
       patientId: p.id,
       patientName: p.name,
       date: currentRx.date || new Date().toISOString().split('T')[0],
@@ -179,7 +184,8 @@ export default function PrescriptionsClientPage() {
     })
 
     addToast('Prescription saved successfully!', 'success')
-    setTimeout(() => { resetCurrentRx(); router.push('/history') }, 500)
+    setSavedRxId(savedRx.id)
+    setTimeout(() => { setShowPrintModal(true) }, 300)
   }
 
   const handlePrint = () => {
@@ -188,6 +194,7 @@ export default function PrescriptionsClientPage() {
     document.title = patientName ? `${patientName} - Prescription` : 'Prescription'
 
     const style = document.createElement('style')
+    style.id = 'print-injected-style'
     style.innerHTML = `
       @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
       body * { visibility: hidden; }
@@ -197,14 +204,67 @@ export default function PrescriptionsClientPage() {
     `
     document.head.appendChild(style)
     window.print()
-    document.head.removeChild(style)
+    const s = document.getElementById('print-injected-style')
+    if (s) document.head.removeChild(s)
 
     document.title = originalTitle
   }
 
+  const handleSavePdf = async () => {
+    const rx = viewMode && viewRx ? viewRx : currentRx
+    const originalTitle = document.title
+    const patientName = rx.patientName
+    document.title = patientName ? `${patientName} - Prescription` : 'Prescription'
+
+    const style = document.createElement('style')
+    style.id = 'pdf-injected-style'
+    style.innerHTML = `
+      @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
+      body * { visibility: hidden; }
+      .print-area, .print-area * { visibility: visible; }
+      .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    `
+    document.head.appendChild(style)
+
+    try {
+      const result = await window.electron.print.toPDF('', { pageSize: paperSize })
+      if (result.success) {
+        addToast(`PDF saved: ${result.path}`, 'success')
+      } else if (result.cancelled) {
+        // no-op
+      } else {
+        addToast(result.error || 'Failed to save PDF', 'error')
+      }
+    } catch (err: any) {
+      addToast(err.message || 'Failed to save PDF', 'error')
+    } finally {
+      const s = document.getElementById('pdf-injected-style')
+      if (s) document.head.removeChild(s)
+      document.title = originalTitle
+    }
+  }
+
+  // Auto-print / auto-PDF when redirected from Save & Print modal
+  useEffect(() => {
+    if (!viewMode || !viewRx) return
+    if (autoPrintTriggeredRef.current) return
+    const autoPrint = searchParams.get('autoPrint')
+    const autoPdf = searchParams.get('autoPdf')
+    if (autoPrint === '1' || autoPdf === '1') {
+      autoPrintTriggeredRef.current = true
+      const timer = setTimeout(() => {
+        if (autoPrint === '1') handlePrint()
+        else handleSavePdf()
+      }, 800)
+      return () => clearTimeout(timer)
+    }
+  }, [viewMode, viewRx, searchParams])
+
   const paperClasses = paperSize === 'A4'
     ? 'w-[210mm] min-h-[297mm]'
     : 'w-[148mm] min-h-[210mm]'
+
 
   // ===================== VIEW MODE =====================
   if (viewMode && viewRx) {
@@ -616,6 +676,54 @@ export default function PrescriptionsClientPage() {
           </Button>
         </div>
       </div>
+
+      {/* Save & Print Modal */}
+      <Modal
+        isOpen={showPrintModal}
+        onClose={() => {
+          setShowPrintModal(false)
+          resetCurrentRx()
+          router.push('/history')
+        }}
+        title="Prescription Saved"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowPrintModal(false)
+                resetCurrentRx()
+                router.push('/history')
+              }}
+            >
+              Done
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (savedRxId) {
+                  setShowPrintModal(false)
+                  router.push(`/prescriptions?view=${savedRxId}&autoPdf=1`)
+                }
+              }}
+            >
+              <FileDown className="w-4 h-4 mr-1.5" /> Save as PDF
+            </Button>
+            <Button
+              onClick={() => {
+                if (savedRxId) {
+                  setShowPrintModal(false)
+                  router.push(`/prescriptions?view=${savedRxId}&autoPrint=1`)
+                }
+              }}
+            >
+              <Printer className="w-4 h-4 mr-1.5" /> Print
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">What would you like to do with this prescription?</p>
+      </Modal>
     </div>
   )
 }

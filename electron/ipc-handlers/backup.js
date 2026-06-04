@@ -114,3 +114,65 @@ ipcMain.handle('backup:restore', async (event, filePath) => {
 ipcMain.handle('backup:getPath', async () => {
   return BACKUP_DIR
 })
+
+ipcMain.handle('backup:restoreCloud', async (event, presignedUrl) => {
+  const zlib = require('zlib')
+  const https = require('https')
+  const http = require('http')
+
+  try {
+    const url = new URL(presignedUrl)
+    const tmpGz = path.join(os.tmpdir(), `prescribo_cloud_${Date.now()}.db.gz`)
+    const tmpDb = path.join(os.tmpdir(), `prescribo_cloud_${Date.now()}.db`)
+
+    // Download from presigned URL
+    await new Promise((resolve, reject) => {
+      const client = url.protocol === 'https:' ? https : http
+      const file = fs.createWriteStream(tmpGz)
+      const req = client.get(presignedUrl, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`Download failed: HTTP ${res.statusCode}`))
+          return
+        }
+        res.pipe(file)
+        file.on('finish', () => { file.close(); resolve(undefined) })
+      })
+      req.on('error', reject)
+      req.setTimeout(60000, () => { req.destroy(); reject(new Error('Download timeout')) })
+    })
+
+    // Decompress gzip
+    await new Promise((resolve, reject) => {
+      const gunzip = zlib.createGunzip()
+      const input = fs.createReadStream(tmpGz)
+      const output = fs.createWriteStream(tmpDb)
+      input.pipe(gunzip).pipe(output)
+      output.on('finish', () => {
+        fs.unlinkSync(tmpGz)
+        resolve(undefined)
+      })
+      output.on('error', reject)
+      gunzip.on('error', reject)
+    })
+
+    // Validate SQLite header
+    const fd = fs.openSync(tmpDb, 'r')
+    const buf = Buffer.alloc(16)
+    fs.readSync(fd, buf, 0, 16, 0)
+    fs.closeSync(fd)
+    if (!buf.toString().startsWith('SQLite format 3')) {
+      fs.unlinkSync(tmpDb)
+      return { success: false, error: 'Invalid SQLite file (decompression failed)' }
+    }
+
+    // Restore via local backend
+    const result = await uploadFile('/api/backup/restore', tmpDb)
+    fs.unlinkSync(tmpDb)
+    return { success: true, ...result }
+  } catch (err) {
+    console.error('[Backup] Cloud restore failed:', err.message)
+    return { success: false, error: err.message }
+  }
+})
+
+module.exports = { downloadFile }
