@@ -31,10 +31,13 @@ require('./ipc-handlers/fs')
 const { startBackend, stopBackend } = require('./backend-spawner')
 const { setBackendUrl, getBackendUrl } = require('./ipc-handlers/api')
 const { initAutoUpdater, stopAutoUpdater } = require('./auto-updater')
+const { startStaticServer } = require('./static-server')
 
 let mainWindow
 let splashWindow
 let licenseGuardianInterval = null
+let staticServer = null
+let staticServerUrl = null
 
 const isDev = !app.isPackaged
 const isMac = process.platform === 'darwin'
@@ -302,10 +305,17 @@ function createMainWindow() {
     mainWindow.loadURL('http://localhost:3000')
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    const indexPath = path.join(__dirname, '../dist/index.html')
-    console.log('[MainWindow] Loading:', indexPath)
-    console.log('[MainWindow] File exists:', fs.existsSync(indexPath))
-    mainWindow.loadFile(indexPath)
+    if (staticServerUrl) {
+      const url = `${staticServerUrl}/index.html`
+      console.log('[MainWindow] Loading from static server:', url)
+      mainWindow.loadURL(url)
+    } else {
+      // Fallback to file protocol (will have RSC navigation issues)
+      const indexPath = path.join(__dirname, '../dist/index.html')
+      console.warn('[MainWindow] Static server not available, falling back to file://')
+      console.log('[MainWindow] Loading:', indexPath)
+      mainWindow.loadFile(indexPath)
+    }
   }
 
   // DEBUG: forward renderer console errors to main process log
@@ -324,9 +334,8 @@ function createMainWindow() {
     console.error('[MainWindow] Renderer process gone:', details.reason, details.exitCode)
   })
 
-  // DEBUG: open DevTools in production temporarily to see white-screen errors
-  // Remove this line once the issue is fixed
-  mainWindow.webContents.openDevTools({ mode: 'detach' })
+  // Uncomment for production debugging:
+  // mainWindow.webContents.openDevTools({ mode: 'detach' })
 
   // Show when ready
   mainWindow.once('ready-to-show', () => {
@@ -349,12 +358,12 @@ function createMainWindow() {
     return { action: 'deny' }
   })
 
-  // Prevent navigation away from app
+  // Prevent navigation away from app (allow our static server)
   mainWindow.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith('http://localhost') && !url.startsWith('file://')) {
-      e.preventDefault()
-      shell.openExternal(url)
-    }
+    if (staticServerUrl && url.startsWith(staticServerUrl)) return
+    if (url.startsWith('http://localhost') || url.startsWith('file://')) return
+    e.preventDefault()
+    shell.openExternal(url)
   })
 
   mainWindow.on('closed', () => {
@@ -373,17 +382,32 @@ app.whenReady().then(async () => {
     if (port) {
       setBackendUrl(`http://127.0.0.1:${port}`)
     }
+
+    // Start a tiny HTTP server to serve the Next.js static export.
+    // This avoids Next.js App Router client-side navigation issues
+    // with the file:// protocol (RSC payload fetches fail on file://).
+    const distPath = path.join(__dirname, '../dist')
+    try {
+      const result = await startStaticServer(distPath, 0)
+      staticServer = result.server
+      staticServerUrl = result.url
+    } catch (err) {
+      console.error('[StaticServer] Failed to start:', err.message)
+    }
   } else {
     // In dev, assume backend is on default port or set by env
     setBackendUrl(process.env.API_URL || 'http://localhost:8000')
   }
 
+  // Create main window immediately so app doesn't quit when splash closes.
+  // (The splash window auto-closes after 2.5s; if mainWindow isn't created
+  // by then, window-all-closed fires and the app quits on Linux.)
+  createMainWindow()
+
   // Wait a moment for backend to be fully ready, then start license guardian
   setTimeout(() => {
     startLicenseGuardian()
   }, 2000)
-
-  setTimeout(createMainWindow, 800)
 })
 
 app.on('window-all-closed', () => {
@@ -403,6 +427,11 @@ app.on('before-quit', () => {
   stopLicenseGuardian()
   stopBackend()
   stopAutoUpdater()
+  if (staticServer) {
+    console.log('[StaticServer] Shutting down...')
+    staticServer.close()
+    staticServer = null
+  }
 })
 
 app.on('will-quit', (event) => {
