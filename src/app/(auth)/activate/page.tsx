@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
-import { Loader2, ClipboardPaste } from 'lucide-react'
+import { Modal } from '@/components/ui/modal'
+import { Loader2, ClipboardPaste, ExternalLink } from 'lucide-react'
 
 const SEGMENT_COUNT = 4
 const LICENSE_REGEX = /^PRSC-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/
@@ -16,6 +17,7 @@ export default function ActivatePage() {
   const { addToast } = useUIStore()
   const [keys, setKeys] = useState(['', '', '', ''])
   const [loading, setLoading] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
   const inputsRef = useRef<(HTMLInputElement | null)[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -96,7 +98,7 @@ export default function ActivatePage() {
       if (msg.includes('limit')) {
         addToast('Activation limit reached. Contact support to transfer your license.', 'error')
       } else if (msg.includes('another device') || msg.includes('admin support')) {
-        addToast('This license is already in use on another device. Please contact admin support to transfer it.', 'error')
+        setShowContactModal(true)
       } else if (msg.includes('revoke')) {
         addToast('This license has been revoked.', 'error')
       } else if (msg.includes('Invalid') || msg.includes('not found')) {
@@ -211,6 +213,34 @@ export default function ActivatePage() {
       </Button>
 
       <p className="mt-4 text-xs text-slate-400">Trial mode available for 14 days</p>
+
+      {/* Contact Admin Support Modal */}
+      <Modal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        title="License Already Activated"
+        footer={
+          <Button onClick={() => setShowContactModal(false)}>Close</Button>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            This license is already in use on another device. To activate on this device, please contact admin support to transfer your license.
+          </p>
+          <a
+            href="https://prescribo.in/admin"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Go to Admin Dashboard
+          </a>
+          <p className="text-xs text-slate-400">
+            Or reach out to your clinic administrator with your license key: <span className="font-mono font-medium text-slate-600">{keys.every(k => k.length === 4) ? `PRSC-${keys.join('-')}` : 'PRSC-XXXX-XXXX-XXXX-XXXX'}</span>
+          </p>
+        </div>
+      </Modal>
     </div>
   )
 }
