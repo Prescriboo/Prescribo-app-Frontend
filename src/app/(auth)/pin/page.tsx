@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
@@ -50,8 +50,33 @@ export default function PinPage() {
     }
   }
 
-  const backspace = () => setPinValue(pinValue.slice(0, -1))
+  const backspace = () => setPinValue((prev) => prev.slice(0, -1))
   const clear = () => setPinValue('')
+
+  // Keyboard support for PIN entry
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (loading) return
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault()
+        enterDigit(parseInt(e.key, 10))
+      } else if (e.key === 'Backspace') {
+        e.preventDefault()
+        backspace()
+      } else if (e.key === 'Delete' || e.key === 'Escape') {
+        e.preventDefault()
+        clear()
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (pinValue.length === 4) {
+          handleSetPin(pinValue)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [pinValue, loading])
 
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 

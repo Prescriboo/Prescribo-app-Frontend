@@ -316,6 +316,11 @@ function createMainWindow() {
       console.log('[MainWindow] Loading:', indexPath)
       mainWindow.loadFile(indexPath)
     }
+
+    // Block DevTools in production
+    mainWindow.webContents.on('devtools-opened', () => {
+      mainWindow.webContents.closeDevTools()
+    })
   }
 
   // DEBUG: forward renderer console errors to main process log
@@ -357,6 +362,19 @@ function createMainWindow() {
     shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  // Block DevTools keyboard shortcuts in production
+  if (!isDev) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      const isDevToolsShortcut =
+        (input.key === 'F12') ||
+        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+        (input.meta && input.alt && input.key.toLowerCase() === 'i')
+      if (isDevToolsShortcut) {
+        event.preventDefault()
+      }
+    })
+  }
 
   // Prevent navigation away from app (allow our static server)
   mainWindow.webContents.on('will-navigate', (e, url) => {
