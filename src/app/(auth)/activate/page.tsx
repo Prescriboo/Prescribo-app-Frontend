@@ -95,6 +95,8 @@ export default function ActivatePage() {
       const msg = err.message || 'Activation failed'
       if (msg.includes('limit')) {
         addToast('Activation limit reached. Contact support to transfer your license.', 'error')
+      } else if (msg.includes('another device') || msg.includes('admin support')) {
+        addToast('This license is already in use on another device. Please contact admin support to transfer it.', 'error')
       } else if (msg.includes('revoke')) {
         addToast('This license has been revoked.', 'error')
       } else if (msg.includes('Invalid') || msg.includes('not found')) {
