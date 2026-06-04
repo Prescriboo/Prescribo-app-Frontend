@@ -302,8 +302,31 @@ function createMainWindow() {
     mainWindow.loadURL('http://localhost:3000')
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    const indexPath = path.join(__dirname, '../dist/index.html')
+    console.log('[MainWindow] Loading:', indexPath)
+    console.log('[MainWindow] File exists:', fs.existsSync(indexPath))
+    mainWindow.loadFile(indexPath)
   }
+
+  // DEBUG: forward renderer console errors to main process log
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    const levels = ['debug', 'log', 'warn', 'error']
+    console.log(`[Renderer:${levels[level] || level}] ${sourceId}:${line} ${message}`)
+  })
+
+  // DEBUG: catch load failures
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error('[MainWindow] Failed to load:', errorCode, errorDescription)
+  })
+
+  // DEBUG: catch renderer crashes
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[MainWindow] Renderer process gone:', details.reason, details.exitCode)
+  })
+
+  // DEBUG: open DevTools in production temporarily to see white-screen errors
+  // Remove this line once the issue is fixed
+  mainWindow.webContents.openDevTools({ mode: 'detach' })
 
   // Show when ready
   mainWindow.once('ready-to-show', () => {
