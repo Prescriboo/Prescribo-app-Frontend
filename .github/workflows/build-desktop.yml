@@ -141,6 +141,9 @@ jobs:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Required to create GitHub releases
+      actions: read        # Required to download artifacts from previous jobs
     if: |
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
       inputs.create_release == true
