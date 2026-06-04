@@ -42,23 +42,37 @@ function startStaticServer(rootDir, port = 0) {
         filePath += 'index.html'
       }
 
-      fs.readFile(filePath, (err, data) => {
-        if (err) {
-          if (err.code === 'ENOENT') {
-            res.writeHead(404, { 'Content-Type': 'text/plain' })
-            res.end('Not found')
-          } else {
+      // Strategy: 0=exact, 1=.html, 2=index.html fallback, 3=404
+      function tryRead(tryPath, strategy = 0) {
+        fs.readFile(tryPath, (err, data) => {
+          if (!err) {
+            res.writeHead(200, {
+              'Content-Type': getMimeType(tryPath),
+              'Cache-Control': 'public, max-age=0',
+            })
+            res.end(data)
+            return
+          }
+          if (err.code !== 'ENOENT') {
             res.writeHead(500, { 'Content-Type': 'text/plain' })
             res.end('Server error')
+            return
           }
-          return
-        }
-        res.writeHead(200, {
-          'Content-Type': getMimeType(filePath),
-          'Cache-Control': 'public, max-age=0',
+          // File not found — try next strategy
+          if (strategy === 0 && !path.extname(reqPath)) {
+            // Try adding .html (e.g. /dashboard → /dashboard.html)
+            tryRead(tryPath + '.html', 1)
+          } else if (strategy === 1) {
+            // .html also missing — fall back to index.html for SPA routes
+            tryRead(path.join(rootDir, 'index.html'), 2)
+          } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' })
+            res.end('Not found')
+          }
         })
-        res.end(data)
-      })
+      }
+
+      tryRead(filePath, 0)
     })
 
     server.listen(port, '127.0.0.1', () => {

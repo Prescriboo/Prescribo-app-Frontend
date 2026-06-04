@@ -28,7 +28,7 @@ export default function Home() {
     if (checking) return
     if (!isActivated) {
       router.push('/activate')
-    } else if (hasPin) {
+    } else if (!hasPin) {
       router.push('/pin')
     } else {
       router.push('/dashboard')
