@@ -42,7 +42,7 @@ linux:
         - x64
 publish:
   provider: github
-  owner: shahinyahya
+  owner: Prescriboo
   repo: Prescribo-app-Frontend
   releaseType: release
 nsis:
