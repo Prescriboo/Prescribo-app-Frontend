@@ -4,6 +4,21 @@ const fs = require('fs')
 const os = require('os')
 const http = require('http')
 
+// Global error logging (catches main process crashes in packaged builds)
+process.on('uncaughtException', (err) => {
+  console.error('[MainProcess] Uncaught exception:', err)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('[MainProcess] Unhandled rejection:', reason)
+})
+
+// AppImage/Linux sandbox fix: disable Chromium sandbox when packaged.
+// The app loads only local files, so this is safe and prevents crashes
+// on distros that don't support unprivileged user namespaces.
+if (process.platform === 'linux' && app.isPackaged) {
+  app.commandLine.appendSwitch('--no-sandbox')
+}
+
 // IPC Handlers
 require('./ipc-handlers/api')
 require('./ipc-handlers/database')
@@ -360,10 +375,15 @@ app.on('activate', () => {
 
 // macOS: hide instead of quit
 app.on('before-quit', () => {
+  console.log('[App] before-quit fired')
   saveWindowState()
   stopLicenseGuardian()
   stopBackend()
   stopAutoUpdater()
+})
+
+app.on('will-quit', (event) => {
+  console.log('[App] will-quit fired')
 })
 
 // Online/offline awareness
@@ -374,10 +394,13 @@ app.on('ready', () => {
 
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock()
+console.log('[App] Single instance lock acquired:', gotTheLock)
 if (!gotTheLock) {
+  console.warn('[App] Another instance is running. Quitting.')
   app.quit()
 } else {
   app.on('second-instance', () => {
+    console.log('[App] Second instance detected. Focusing existing window.')
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
