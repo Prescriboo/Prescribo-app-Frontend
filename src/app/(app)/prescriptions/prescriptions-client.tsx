@@ -430,7 +430,7 @@ export default function PrescriptionsClientPage() {
           </div>
         )}
 
-        <Card title="Patient Information" icon={<UserIcon />}>
+        <Card data-tour-step="rx-builder" title="Patient Information" icon={<UserIcon />}>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="flex flex-col gap-1.5" data-enter-nav>
               <label className="text-xs font-semibold text-slate-500">Patient Name</label>
@@ -495,7 +495,7 @@ export default function PrescriptionsClientPage() {
           </div>
         </Card>
 
-        <div className="bg-white border border-border rounded-xl p-5 shadow-sm mb-5">
+        <div data-tour-step="medicines" className="bg-white border border-border rounded-xl p-5 shadow-sm mb-5">
           <div className="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-wider text-slate-400">
             <PillIcon /> Medicines
           </div>
@@ -560,7 +560,7 @@ export default function PrescriptionsClientPage() {
         </div>
       </div>
 
-      <div className="w-[420px] bg-white border-l border-border p-5 overflow-y-auto flex-shrink-0">
+      <div data-tour-step="preview" className="w-[420px] bg-white border-l border-border p-5 overflow-y-auto flex-shrink-0">
         <div className="flex items-center justify-between w-full max-w-[380px] mb-3 mx-auto">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             {editingRxId ? 'Update Preview' : 'Live Preview'}

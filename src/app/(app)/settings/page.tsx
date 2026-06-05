@@ -14,6 +14,7 @@ import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 
 import { useUIStore } from '@/stores/ui-store'
+import { useOnboardingStore } from '@/stores/onboarding-store'
 import { autocompleteApi, backupApi, cloudBackupApi, authApi, mastersApi, type AuthState, type LicenceStatus } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,8 @@ import { cn } from '@/lib/utils'
 import {
   Building, Shield, Pill, Database, KeyRound, Cloud,
   Search, Plus, Trash2, Trash, Pencil, X, FileText, Download, Save, Upload,
-  ListChecks, Clock, Calendar, UserRound, LayoutTemplate, RefreshCw, CloudUpload, CloudDownload
+  ListChecks, Clock, Calendar, UserRound, LayoutTemplate, RefreshCw, CloudUpload, CloudDownload,
+  RotateCcw
 } from 'lucide-react'
 
 const tabs = [
@@ -163,10 +165,28 @@ function ClinicTab({ clinic, updateClinic, addToast }: any) {
           <Input value={clinic.signature} onChange={(e) => updateClinic({ signature: e.target.value })} />
         </div>
       </div>
-      <Button className="mt-4" onClick={() => addToast('Clinic settings updated', 'success')}>
-        Save Changes
-      </Button>
+      <div className="flex items-center gap-3 mt-4">
+        <Button onClick={() => addToast('Clinic settings updated', 'success')}>
+          Save Changes
+        </Button>
+        <RestartTutorialButton addToast={addToast} />
+      </div>
     </div>
+  )
+}
+
+function RestartTutorialButton({ addToast }: { addToast: any }) {
+  const { restartTour } = useOnboardingStore()
+  return (
+    <button
+      onClick={() => {
+        restartTour()
+        addToast('Tutorial restarted', 'success')
+      }}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-primary-light bg-primary-50 text-primary text-xs font-semibold hover:bg-primary-100 transition"
+    >
+      <RotateCcw size={13} /> Restart Tutorial
+    </button>
   )
 }
 

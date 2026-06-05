@@ -7,6 +7,7 @@ import { StatusBar } from '@/components/layout/status-bar'
 import { LicenseLockScreen } from '@/components/layout/license-lock-screen'
 import { ToastContainer } from '@/components/ui/toast'
 import UpdateNotification from '@/components/update-notification'
+import OnboardingManager from '@/components/onboarding/OnboardingManager'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -34,6 +35,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* License lock overlay */}
       <LicenseLockScreen />
+
+      {/* First-time onboarding */}
+      <OnboardingManager />
     </div>
   )
 }

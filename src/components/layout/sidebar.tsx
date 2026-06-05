@@ -62,12 +62,13 @@ export function Sidebar() {
         </svg>
       </div>
 
-      <nav className="flex flex-col gap-0.5 flex-1 w-full">
+      <nav className="flex flex-col gap-0.5 flex-1 w-full" data-tour-step="sidebar">
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.id
           return (
             <button
               key={item.id}
+              data-tour-step={item.id === 'settings' ? 'settings' : undefined}
               onClick={() => router.push(`/${item.id}`)}
               className={cn(
                 'flex items-center gap-3 px-3.5 py-2.5 rounded-lg cursor-pointer transition-all text-sm font-medium w-full',

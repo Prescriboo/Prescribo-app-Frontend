@@ -47,7 +47,7 @@ export default function DashboardPage() {
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-5 mb-5">
+      <div className="grid grid-cols-2 gap-5 mb-5" data-tour-step="stats">
         {stats.map((stat, i) => (
           <Card key={i} className="p-5 hover:-translate-y-1 hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-teal opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -92,7 +92,7 @@ export default function DashboardPage() {
             <span className="text-sm font-bold text-slate-900">Quick Actions</span>
           </div>
           <div className="grid grid-cols-2 gap-3.5">
-            <QuickAction icon={<Plus className="w-5 h-5" />} label="New Prescription" onClick={() => router.push('/prescriptions')} />
+            <QuickAction icon={<Plus className="w-5 h-5" />} label="New Prescription" onClick={() => router.push('/prescriptions')} dataTourStep="quick-action" />
             <QuickAction icon={<UserPlus className="w-5 h-5" />} label="Add Patient" onClick={() => router.push('/patients')} />
             <QuickAction icon={<LayoutTemplate className="w-5 h-5" />} label="Templates" onClick={() => router.push('/templates')} />
             <QuickAction icon={<Settings className="w-5 h-5" />} label="Settings" onClick={() => router.push('/settings')} />
@@ -103,9 +103,10 @@ export default function DashboardPage() {
   )
 }
 
-function QuickAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function QuickAction({ icon, label, onClick, dataTourStep }: { icon: React.ReactNode; label: string; onClick: () => void; dataTourStep?: string }) {
   return (
     <button
+      data-tour-step={dataTourStep}
       className="flex flex-col items-center gap-2 p-5 bg-bg border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary-50 hover:-translate-y-0.5 transition-all text-center"
       onClick={onClick}
     >

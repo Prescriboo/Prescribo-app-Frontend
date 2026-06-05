@@ -30,7 +30,7 @@ export function TopBar() {
 
   return (
     <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-border gap-4 flex-shrink-0 relative">
-      <div className="relative flex items-center gap-2.5 bg-bg border border-border rounded-xl px-4 py-2 w-full max-w-sm focus-within:border-primary-light focus-within:ring-3 focus-within:ring-primary-100 transition-all">
+      <div data-tour-step="topbar-search" className="relative flex items-center gap-2.5 bg-bg border border-border rounded-xl px-4 py-2 w-full max-w-sm focus-within:border-primary-light focus-within:ring-3 focus-within:ring-primary-100 transition-all">
         <Search className="w-[18px] h-[18px] text-slate-400 flex-shrink-0" />
         <Input
           type="text"
