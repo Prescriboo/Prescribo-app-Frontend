@@ -85,7 +85,7 @@ export function TopBar() {
         </button>
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"
-          onClick={() => addToast('Help center coming soon', 'info')}
+          onClick={() => router.push('/help')}
         >
           <HelpCircle className="w-[18px] h-[18px]" />
         </button>

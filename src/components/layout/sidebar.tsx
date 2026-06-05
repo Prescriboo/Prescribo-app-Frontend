@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { NAV_ITEMS } from '@/lib/constants'
 import {
   LayoutGrid, Users, FileText, LayoutTemplate, Clock, Settings,
-  ChevronLeft, ChevronRight
+  HelpCircle, ChevronLeft, ChevronRight
 } from 'lucide-react'
 
 const icons: Record<string, React.ReactNode> = {
@@ -16,6 +16,7 @@ const icons: Record<string, React.ReactNode> = {
   FileText: <FileText className="w-5 h-5 flex-shrink-0" />,
   LayoutTemplate: <LayoutTemplate className="w-5 h-5 flex-shrink-0" />,
   Clock: <Clock className="w-5 h-5 flex-shrink-0" />,
+  HelpCircle: <HelpCircle className="w-5 h-5 flex-shrink-0" />,
   Settings: <Settings className="w-5 h-5 flex-shrink-0" />,
 }
 

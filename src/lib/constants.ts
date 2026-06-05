@@ -6,5 +6,6 @@ export const NAV_ITEMS = [
   { id: 'prescriptions', label: 'New Prescription', icon: 'FileText' },
   { id: 'templates', label: 'Templates', icon: 'LayoutTemplate' },
   { id: 'history', label: 'History', icon: 'Clock' },
+  { id: 'help', label: 'Help', icon: 'HelpCircle' },
   { id: 'settings', label: 'Settings', icon: 'Settings' },
 ]
