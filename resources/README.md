@@ -1,13 +1,10 @@
-# Resources
+# App Icons
 
-Place your app icons here:
+These icon files are used by electron-builder to create the packaged app icons:
 
-- `icon.icns` - macOS icon (512x512 or 1024x1024)
-- `icon.ico` - Windows icon (256x256)
-- `icon.png` - Linux icon (512x512)
+- `icon.icns` - macOS icon (generated from app_icon_512.png)
+- `icon.ico` - Windows icon (generated from app_icon_512.png)
+- `icon.png` - Linux icon and runtime window icon (512x512)
 
-You can generate all formats from a single PNG using:
-- https://iconverticons.com/online/
-- https://www.icoconverter.com/
-
-For now, the app will work without icons (Electron uses a default).
+The window icon is also referenced in `electron/main.js` for the main window,
+splash screen, and dialog boxes.
