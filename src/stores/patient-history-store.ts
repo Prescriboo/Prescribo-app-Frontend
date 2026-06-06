@@ -47,7 +47,7 @@ export const usePatientHistoryStore = create<PatientHistoryState>((set, get) => 
               frequency: entryData.frequency,
               duration: entryData.duration,
               prescribed_at: entryData.date,
-              instructions: [entryData.diagnosis, entryData.notes].filter(Boolean).join(' — '),
+              instructions: [entryData.diagnosis, entryData.notes].filter(Boolean).join(' - '),
             })
             set((s) => ({
               entries: [{
@@ -89,7 +89,7 @@ export const usePatientHistoryStore = create<PatientHistoryState>((set, get) => 
             if (data.duration !== undefined) payload.duration = data.duration
             if (data.date !== undefined) payload.prescribed_at = data.date
             if (data.diagnosis !== undefined || data.notes !== undefined) {
-              payload.instructions = [data.diagnosis ?? existing.diagnosis, data.notes ?? existing.notes].filter(Boolean).join(' — ')
+              payload.instructions = [data.diagnosis ?? existing.diagnosis, data.notes ?? existing.notes].filter(Boolean).join(' - ')
             }
             if (Object.keys(payload).length > 0) {
               await patientHistoryApi.update(id, payload)

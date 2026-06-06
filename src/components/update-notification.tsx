@@ -127,7 +127,7 @@ export default function UpdateNotification() {
           <Download size={18} className="text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium text-brand-800 dark:text-brand-300">
-              Update available — Prescribo {state.info.version}
+              Update available - Prescribo {state.info.version}
             </p>
             <p className="text-xs text-brand-600 dark:text-brand-400 mt-0.5">
               Downloading in the background... Click to see what's new.

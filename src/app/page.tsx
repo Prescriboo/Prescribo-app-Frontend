@@ -17,7 +17,7 @@ export default function Home() {
         hydrateFromApi(state)
       })
       .catch(() => {
-        // Backend unreachable — stay with default empty state
+        // Backend unreachable - stay with default empty state
       })
       .finally(() => {
         setChecking(false)

@@ -55,7 +55,7 @@ export function LicenseLockScreen() {
         setRefreshing(false)
         return
       } catch {
-        // Silent reactivation failed — fall through to refresh
+        // Silent reactivation failed - fall through to refresh
       }
 
       // Try refresh token

@@ -20,7 +20,7 @@ async function apiFetch(path, options = {}) {
   return res.json()
 }
 
-// Legacy IPC handlers — now proxy to FastAPI backend
+// Legacy IPC handlers - now proxy to FastAPI backend
 ipcMain.handle('db:query', async (event, sql, params) => {
   console.log('DB Query (deprecated):', sql, params)
   return { success: true, rows: [] }

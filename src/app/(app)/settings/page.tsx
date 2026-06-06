@@ -1135,7 +1135,7 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Database Size</div>
-            <div className="text-sm font-semibold text-slate-900">{status ? formatBytes(status.db_size_bytes) : '—'}</div>
+            <div className="text-sm font-semibold text-slate-900">{status ? formatBytes(status.db_size_bytes) : '-'}</div>
           </div>
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Last Backup</div>
@@ -1146,12 +1146,12 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Next Backup Due</div>
             <div className="text-sm font-semibold text-slate-900">
-              {status?.next_backup_due ? new Date(status.next_backup_due).toLocaleDateString() : '—'}
+              {status?.next_backup_due ? new Date(status.next_backup_due).toLocaleDateString() : '-'}
             </div>
           </div>
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Database Path</div>
-            <div className="text-sm font-semibold text-slate-900 truncate" title={status?.db_path}>{status?.db_path ? status.db_path.split('/').pop() : '—'}</div>
+            <div className="text-sm font-semibold text-slate-900 truncate" title={status?.db_path}>{status?.db_path ? status.db_path.split('/').pop() : '-'}</div>
           </div>
         </div>
 
@@ -1215,7 +1215,7 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
                       </span>
                     </td>
                     <td className="px-3 py-2 text-slate-700">{formatBytes(b.size_bytes)}</td>
-                    <td className="px-3 py-2 text-slate-700 text-xs">{b.device_name || '—'}</td>
+                    <td className="px-3 py-2 text-slate-700 text-xs">{b.device_name || '-'}</td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
@@ -1252,7 +1252,7 @@ function BackupTab({ addToast, demoMode }: { addToast: any; demoMode: boolean })
 
 /* ===================== LICENSE TAB ===================== */
 function formatDate(iso?: string) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const d = new Date(iso)
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
@@ -1294,7 +1294,7 @@ function AppUpdatesSection({ addToast }: { addToast: any }) {
       if (result.updateInfo && result.updateInfo.version) {
         setUpdateVersion(result.updateInfo.version)
         setUpdateState('available')
-        addToast(`Update ${result.updateInfo.version} available — downloading...`, 'success')
+        addToast(`Update ${result.updateInfo.version} available - downloading...`, 'success')
       } else {
         setUpdateState('idle')
         addToast('You are on the latest version', 'success')
@@ -1422,7 +1422,7 @@ function LicenseTab({ licenseKey, demoMode, addToast }: { licenseKey: string; de
   const isLocked = !status?.valid && !!status?.grace_expired
   const displayKey = demoMode ? 'DEMO-MODE-XXXX' : maskKey(state?.license_key || licenseKey || '')
   const planLabel = state?.plan || (demoMode ? 'demo' : '')
-  const planDisplay = planLabel === 'individual' ? 'Individual' : planLabel === 'clinic' ? 'Clinic' : planLabel === 'demo' ? 'Demo' : '—'
+  const planDisplay = planLabel === 'individual' ? 'Individual' : planLabel === 'clinic' ? 'Clinic' : planLabel === 'demo' ? 'Demo' : '-'
   const statusLabel = status?.status === 'revoked' ? 'Revoked' : isLocked ? 'Locked' : status?.grace_expired ? 'Grace Period' : status?.access_expired ? 'Token Expired' : status?.valid ? 'Active' : 'Inactive'
   const statusDot = status?.status === 'revoked' || isLocked ? 'bg-danger' : status?.access_expired || status?.refresh_expired ? 'bg-warning' : 'bg-success'
   const statusText = status?.status === 'revoked' || isLocked ? 'text-danger' : status?.access_expired || status?.refresh_expired ? 'text-warning' : 'text-success'
@@ -1557,7 +1557,7 @@ function LicenseTab({ licenseKey, demoMode, addToast }: { licenseKey: string; de
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-500">Machine ID</label>
             <div className="bg-slate-50 border border-border rounded-md px-3 py-2 text-xs text-slate-400 font-mono truncate" title={state?.machine_id || status?.machine_id}>
-              {(state?.machine_id || status?.machine_id || '—').slice(0, 16)}…
+              {(state?.machine_id || status?.machine_id || '-').slice(0, 16)}…
             </div>
           </div>
 

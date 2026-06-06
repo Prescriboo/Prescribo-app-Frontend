@@ -32,7 +32,7 @@ export function StatusBar() {
           const refreshed = await authApi.status()
           setLicenceStatus(refreshed)
         } catch {
-          // Refresh failed — status already shows the issue
+          // Refresh failed - status already shows the issue
         }
       }
     } catch {
@@ -73,7 +73,7 @@ export function StatusBar() {
       await authApi.refresh()
       await fetchLicenceStatus()
     } catch (err: any) {
-      // Refresh failed — status will show on next poll
+      // Refresh failed - status will show on next poll
     }
   }
 
@@ -120,7 +120,7 @@ export function StatusBar() {
         {/* Database status */}
         <div className="flex items-center gap-1.5">
           <Database className={`w-3 h-3 ${isConnected ? 'text-primary' : 'text-slate-400'}`} />
-          <span>{isConnected ? `API v${backendVersion || '2.5.0'}` : 'Local Storage'}</span>
+          <span>{isConnected ? `API v${backendVersion || '1.0.0'}` : 'Local Storage'}</span>
         </div>
 
         {!isConnected && (

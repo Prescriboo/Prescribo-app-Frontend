@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Prescribo — Desktop Prescription Generator",
+  title: "Prescribo - Desktop Prescription Generator",
   description: "Modern desktop prescription management",
 }
 

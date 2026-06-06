@@ -37,7 +37,7 @@ export default function ActivatePage() {
           addToast('License key pasted from clipboard', 'success')
         }
       } catch {
-        // Clipboard access denied or no matching content — silently ignore
+        // Clipboard access denied or no matching content - silently ignore
       }
     }
     tryAutoPaste()

@@ -402,7 +402,7 @@ function createMainWindow() {
     })
 
     if (choice === 2) {
-      // Cancel — do nothing
+      // Cancel - do nothing
       return
     }
 

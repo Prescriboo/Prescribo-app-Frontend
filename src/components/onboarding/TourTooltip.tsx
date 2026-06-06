@@ -11,11 +11,11 @@ export const TOUR_STEPS: { title: string; description: string }[] = [
   },
   {
     title: 'Dashboard Overview',
-    description: 'See your total patients, prescriptions written, templates, and daily stats at a glance. Your clinic pulse — in real time.',
+    description: 'See your total patients, prescriptions written, templates, and daily stats at a glance. Your clinic pulse - in real time.',
   },
   {
     title: 'Quick Actions',
-    description: 'Start a new prescription, add a patient, browse templates, or open settings — all from the dashboard shortcuts.',
+    description: 'Start a new prescription, add a patient, browse templates, or open settings - all from the dashboard shortcuts.',
   },
   {
     title: 'Prescription Builder',

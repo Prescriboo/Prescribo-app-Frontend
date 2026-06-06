@@ -19,13 +19,13 @@ const STEP_SELECTORS: string[] = [
 ]
 
 const STEP_ROUTES: (string | undefined)[] = [
-  undefined,    // sidebar — always visible
+  undefined,    // sidebar - always visible
   '/dashboard', // stats
   '/dashboard', // quick-action
   '/prescriptions', // rx-builder
   '/prescriptions', // medicines
   '/prescriptions', // preview
-  undefined,    // topbar-search — always visible
+  undefined,    // topbar-search - always visible
   '/settings',  // settings
 ]
 

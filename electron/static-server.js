@@ -58,12 +58,12 @@ function startStaticServer(rootDir, port = 0) {
             res.end('Server error')
             return
           }
-          // File not found — try next strategy
+          // File not found - try next strategy
           if (strategy === 0 && !path.extname(reqPath)) {
             // Try adding .html (e.g. /dashboard → /dashboard.html)
             tryRead(tryPath + '.html', 1)
           } else if (strategy === 1) {
-            // .html also missing — fall back to index.html for SPA routes
+            // .html also missing - fall back to index.html for SPA routes
             tryRead(path.join(rootDir, 'index.html'), 2)
           } else {
             res.writeHead(404, { 'Content-Type': 'text/plain' })

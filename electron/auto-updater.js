@@ -10,7 +10,7 @@ const { ipcMain, dialog, app } = require('electron')
 let mainWindow = null
 let updateCheckInterval = null
 
-// How often to check for updates (in production) — 30 minutes
+// How often to check for updates (in production) - 30 minutes
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000
 
 function sendStatusToWindow(status, data = {}) {
@@ -19,7 +19,7 @@ function sendStatusToWindow(status, data = {}) {
   }
 }
 
-// IPC handlers — always registered so the renderer never gets
+// IPC handlers - always registered so the renderer never gets
 // "No handler registered for 'updater:check'"
 ipcMain.handle('updater:check', async () => {
   if (!app.isPackaged || process.env.NODE_ENV === 'development') {
@@ -36,7 +36,7 @@ ipcMain.handle('updater:check', async () => {
 
 ipcMain.handle('updater:install', () => {
   if (!app.isPackaged || process.env.NODE_ENV === 'development') {
-    console.log('[AutoUpdater] Install skipped — development mode')
+    console.log('[AutoUpdater] Install skipped - development mode')
     return
   }
   autoUpdater.quitAndInstall(false, true)
@@ -47,11 +47,11 @@ function initAutoUpdater(window) {
 
   // Don't check for updates in development
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
-    console.log('[AutoUpdater] Skipping — development mode')
+    console.log('[AutoUpdater] Skipping - development mode')
     return
   }
 
-  // Optional: force check on start (disabled by default — uncomment if desired)
+  // Optional: force check on start (disabled by default - uncomment if desired)
   // checkForUpdates()
 
   // Periodic checks
@@ -122,7 +122,7 @@ function initAutoUpdater(window) {
 
 function checkForUpdates() {
   if (!app.isPackaged) {
-    console.log('[AutoUpdater] Skipping check — not packaged')
+    console.log('[AutoUpdater] Skipping check - not packaged')
     return
   }
   autoUpdater.checkForUpdates().catch((err) => {
