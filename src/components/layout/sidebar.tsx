@@ -43,23 +43,11 @@ export function Sidebar() {
       </button>
 
       <div className={cn('flex items-center justify-center mb-6 p-2 min-h-[60px] transition-all', sidebarCollapsed ? '' : 'justify-center')}>
-        <svg
-          className={cn('h-auto transition-all', sidebarCollapsed ? 'w-11' : 'w-[140px]')}
-          viewBox="0 0 200 60"
-          fill="none"
-        >
-          <rect x="5" y="15" width="40" height="40" rx="8" fill="url(#g3)" />
-          <path d="M15 25h20M15 35h20M15 45h12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-          {!sidebarCollapsed && (
-            <text x="55" y="42" fontSize="28" fontWeight="800" fill="#1e3a8a">Prescribo</text>
-          )}
-          <defs>
-            <linearGradient id="g3" x1="5" y1="15" x2="45" y2="55">
-              <stop stopColor="#1d4ed8" />
-              <stop offset="1" stopColor="#14b8a6" />
-            </linearGradient>
-          </defs>
-        </svg>
+        <img
+          src="/prescribo_logo_transparent.png"
+          alt="Prescribo"
+          className={cn('h-auto transition-all', sidebarCollapsed ? 'w-10' : 'w-[140px]')}
+        />
       </div>
 
       <nav className="flex flex-col gap-0.5 flex-1 w-full" data-tour-step="sidebar">

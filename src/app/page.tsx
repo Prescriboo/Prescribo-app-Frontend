@@ -36,7 +36,8 @@ export default function Home() {
   }, [isActivated, hasPin, checking, router])
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-bg">
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
+      <img src="/app_icon_512.png" alt="Prescribo" className="w-16 h-16 rounded-xl shadow-lg" />
       <div className="animate-pulse text-primary font-bold text-lg">Loading Prescribo...</div>
     </div>
   )

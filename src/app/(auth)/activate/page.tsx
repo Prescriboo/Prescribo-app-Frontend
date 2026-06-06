@@ -128,16 +128,7 @@ export default function ActivatePage() {
 
   return (
     <div className="bg-white border border-border rounded-2xl p-8 w-full max-w-xl shadow-2xl text-center relative z-10">
-      <svg className="w-44 h-auto mx-auto mb-6" viewBox="0 0 200 60" fill="none">
-        <rect x="5" y="15" width="40" height="40" rx="8" fill="url(#g1)" />
-        <path d="M15 25h20M15 35h20M15 45h12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-        <text x="55" y="42" fontSize="28" fontWeight="800" fill="#1e3a8a">Prescribo</text>
-        <defs>
-          <linearGradient id="g1" x1="5" y1="15" x2="45" y2="55">
-            <stop stopColor="#1d4ed8" /><stop offset="1" stopColor="#14b8a6" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img src="/prescribo_logo_transparent.png" alt="Prescribo" className="w-44 h-auto mx-auto mb-6" />
 
       <h2 className="text-xl font-bold mb-1">Activate Prescribo</h2>
       <p className="text-slate-500 text-sm mb-6">Enter your license key to unlock the full version.</p>

@@ -46,16 +46,7 @@ export function TitleBar() {
     >
       {/* Left: App branding */}
       <div className="flex items-center gap-3 px-4 h-full" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#tbgrad)"/>
-          <path d="M8 9h8M8 13h8M8 17h5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          <defs>
-            <linearGradient id="tbgrad" x1="2" y1="2" x2="22" y2="22">
-              <stop stopColor="#1d4ed8"/>
-              <stop offset="1" stopColor="#14b8a6"/>
-            </linearGradient>
-          </defs>
-        </svg>
+        <img src="/app_icon_512.png" alt="Prescribo" className="w-5 h-5 rounded flex-shrink-0" />
         <span className="text-[13px] font-semibold text-white/90 tracking-wide">Prescribo</span>
         <span className="text-[10px] font-medium text-white/40 bg-white/10 px-1.5 py-0.5 rounded">v2.4.1</span>
       </div>

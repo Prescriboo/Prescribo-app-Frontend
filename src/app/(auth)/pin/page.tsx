@@ -82,16 +82,7 @@ export default function PinPage() {
 
   return (
     <div className="flex-col items-center justify-center bg-white p-6 flex">
-      <svg className="w-36 h-auto mb-8" viewBox="0 0 200 60" fill="none">
-        <rect x="5" y="15" width="40" height="40" rx="8" fill="url(#g2)" />
-        <path d="M15 25h20M15 35h20M15 45h12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-        <text x="55" y="42" fontSize="28" fontWeight="800" fill="#1e3a8a">Prescribo</text>
-        <defs>
-          <linearGradient id="g2" x1="5" y1="15" x2="45" y2="55">
-            <stop stopColor="#1d4ed8" /><stop offset="1" stopColor="#14b8a6" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img src="/prescribo_logo_transparent.png" alt="Prescribo" className="w-36 h-auto mb-8" />
       <h2 className="text-xl font-bold mb-1">Enter PIN</h2>
       <p className="text-slate-400 text-sm mb-8">Secure your prescriptions with a 4-digit PIN</p>
       <div className="flex gap-4 mb-8">
