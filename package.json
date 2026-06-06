@@ -2,7 +2,7 @@
   "name": "prescribo-desktop",
   "version": "1.0.0",
   "description": "Prescribo Desktop - Offline Prescription Generator",
-  "author": "Prescribo <support@prescribo.in>",
+  "author": "Prescribo <support@prescribo.co>",
   "private": true,
   "main": "electron/main.js",
   "scripts": {

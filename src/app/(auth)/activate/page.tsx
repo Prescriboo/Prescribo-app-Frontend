@@ -228,7 +228,7 @@ export default function ActivatePage() {
             This license is already in use on another device. To activate on this device, please contact admin support to transfer your license.
           </p>
           <a
-            href="https://prescribo.in/admin"
+            href="https://prescribo.co/admin"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
