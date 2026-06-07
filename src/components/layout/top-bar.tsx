@@ -7,6 +7,8 @@ import { usePrescriptionStore } from '@/stores/prescription-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Input } from '@/components/ui/input'
 import { Bell, HelpCircle, Search } from 'lucide-react'
+import { useSettingsStore } from '@/stores/settings-store'
+import { getAvatarGradient, getInitials } from '@/lib/avatar'
 
 export function TopBar() {
   const router = useRouter()
@@ -89,13 +91,25 @@ export function TopBar() {
         >
           <HelpCircle className="w-[18px] h-[18px]" />
         </button>
-        <div
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-teal text-white flex items-center justify-center font-bold text-xs cursor-pointer shadow-sm"
-          onClick={() => router.push('/settings')}
-        >
-          DS
-        </div>
+        <AvatarButton onClick={() => router.push('/settings')} />
       </div>
     </header>
+  )
+}
+
+function AvatarButton({ onClick }: { onClick: () => void }) {
+  const { clinic } = useSettingsStore()
+  const name = clinic.doctorName || 'User'
+  const initials = getInitials(name)
+  const gradient = getAvatarGradient(name)
+
+  return (
+    <button
+      className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center font-bold text-[11px] cursor-pointer shadow-sm hover:scale-105 hover:shadow-md transition-all`}
+      onClick={onClick}
+      title={name}
+    >
+      {initials}
+    </button>
   )
 }
