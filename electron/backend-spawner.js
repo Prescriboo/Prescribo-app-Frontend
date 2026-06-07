@@ -74,7 +74,13 @@ async function startBackend(appDir) {
   let backendPath = possiblePaths.find((p) => fs.existsSync(p))
 
   // Also look for a bundled executable
+  // NOTE: electron-builder copies to 'prescribo-backend' (not 'prescribo-app-backend')
   const exePaths = [
+    path.join(appDir, '..', 'prescribo-backend', 'prescribo-backend'),
+    path.join(appDir, 'prescribo-backend', 'prescribo-backend'),
+    path.join(appDir, '..', 'prescribo-backend', 'prescribo-backend.exe'),
+    path.join(appDir, 'prescribo-backend', 'prescribo-backend.exe'),
+    // Legacy paths (for backwards compatibility)
     path.join(appDir, '..', 'prescribo-app-backend', 'prescribo-backend'),
     path.join(appDir, 'prescribo-app-backend', 'prescribo-backend'),
     path.join(appDir, '..', 'prescribo-app-backend', 'prescribo-backend.exe'),

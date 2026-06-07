@@ -19,6 +19,13 @@ if (process.platform === 'linux' && app.isPackaged) {
   app.commandLine.appendSwitch('--no-sandbox')
 }
 
+// Windows: disable hardware acceleration to prevent GPU driver crashes.
+// Electron 35 + certain Windows GPU drivers cause renderer crashes after
+// the splash screen. This is a common, safe workaround.
+if (process.platform === 'win32' && app.isPackaged) {
+  app.disableHardwareAcceleration()
+}
+
 // IPC Handlers
 require('./ipc-handlers/api')
 require('./ipc-handlers/database')
@@ -285,7 +292,7 @@ function createMainWindow() {
     title: 'Prescribo',
     // Frameless on Windows/Linux for custom titlebar; native on macOS
     frame: isMac,
-    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    titleBarStyle: isMac ? 'hiddenInset' : undefined,
     backgroundColor: '#f8fafc',
     show: false,
     icon: path.join(__dirname, '../resources/icon.png'),
@@ -351,6 +358,17 @@ function createMainWindow() {
     // Initialize auto-updater after window is shown
     initAutoUpdater(mainWindow)
   })
+
+  // Fallback: if ready-to-show never fires (e.g. load failure), show anyway
+  const showFallback = setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible() && !mainWindow.isDestroyed()) {
+      console.warn('[MainWindow] ready-to-show never fired, showing window anyway')
+      mainWindow.show()
+      mainWindow.focus()
+      initAutoUpdater(mainWindow)
+    }
+  }, 8000)
+  mainWindow.once('ready-to-show', () => clearTimeout(showFallback))
 
   // Save state on changes
   mainWindow.on('resize', saveWindowState)
