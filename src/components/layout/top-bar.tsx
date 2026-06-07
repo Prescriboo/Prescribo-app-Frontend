@@ -105,7 +105,8 @@ function AvatarButton({ onClick }: { onClick: () => void }) {
 
   return (
     <button
-      className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center font-bold text-[11px] cursor-pointer shadow-sm hover:scale-105 hover:shadow-md transition-all`}
+      className="w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-[11px] cursor-pointer shadow-sm hover:scale-105 hover:shadow-md transition-all"
+      style={{ background: gradient }}
       onClick={onClick}
       title={name}
     >

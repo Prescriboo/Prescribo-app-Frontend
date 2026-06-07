@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAuthStore } from '@/stores/auth-store'
+import { useSettingsStore } from '@/stores/settings-store'
 import SetupWizard from './SetupWizard'
 import TourOverlay from './TourOverlay'
 import TourTooltip, { TOUR_STEPS } from './TourTooltip'
@@ -30,19 +32,32 @@ const STEP_ROUTES: (string | undefined)[] = [
 ]
 
 export default function OnboardingManager() {
-  const { isActive, currentStep, wizardCompleted, hasCompleted, hasSkipped } = useOnboardingStore()
+  const { isActive, currentStep, wizardCompleted, hasCompleted, hasSkipped, finishTour, completeWizard } = useOnboardingStore()
+  const { demoMode } = useAuthStore()
+  const { clinic } = useSettingsStore()
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
+  // If clinic profile already has data, consider onboarding done (handles cleared localStorage)
+  const hasClinicProfile = Boolean(clinic?.doctorName?.trim() && clinic?.clinicName?.trim())
+
+  // Auto-mark complete if profile exists but onboarding state was lost
+  useEffect(() => {
+    if (hasClinicProfile && !hasCompleted && !hasSkipped) {
+      completeWizard()
+      finishTour()
+    }
+  }, [hasClinicProfile, hasCompleted, hasSkipped, completeWizard, finishTour])
+
   // Auto-start wizard on first mount if not completed
   useEffect(() => {
-    if (!wizardCompleted && !hasCompleted && !hasSkipped) {
+    if (!wizardCompleted && !hasCompleted && !hasSkipped && !hasClinicProfile && !demoMode) {
       const store = useOnboardingStore.getState()
       const timer = setTimeout(() => store.startWizard(), 600)
       return () => clearTimeout(timer)
     }
-  }, [wizardCompleted, hasCompleted, hasSkipped])
+  }, [wizardCompleted, hasCompleted, hasSkipped, hasClinicProfile, demoMode])
 
   // Auto-navigate to the correct route for the current tour step
   useEffect(() => {
@@ -68,7 +83,13 @@ export default function OnboardingManager() {
     setTargetRect(rect)
   }, [])
 
-  if (!isActive && !wizardCompleted && !hasCompleted && !hasSkipped) {
+  // Skip onboarding entirely in demo mode
+  if (demoMode) return null
+
+  // Don't show anything if already completed, skipped, or profile already exists
+  if (hasCompleted || hasSkipped || hasClinicProfile) return null
+
+  if (!isActive && !wizardCompleted) {
     return <SetupWizard />
   }
 

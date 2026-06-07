@@ -90,13 +90,13 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     },
 
     skipTour: () => {
-      const next = { ...get(), isActive: false, hasSkipped: true }
+      const next = { ...get(), isActive: false, hasSkipped: true, wizardCompleted: true }
       set(next)
       saveToStorage({ hasCompleted: next.hasCompleted, hasSkipped: next.hasSkipped, wizardCompleted: next.wizardCompleted })
     },
 
     finishTour: () => {
-      const next = { ...get(), isActive: false, hasCompleted: true, currentStep: 0 }
+      const next = { ...get(), isActive: false, hasCompleted: true, wizardCompleted: true, currentStep: 0 }
       set(next)
       saveToStorage({ hasCompleted: next.hasCompleted, hasSkipped: next.hasSkipped, wizardCompleted: next.wizardCompleted })
     },

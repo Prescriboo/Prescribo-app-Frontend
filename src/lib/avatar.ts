@@ -4,18 +4,18 @@
  */
 
 const GRADIENTS = [
-  'from-rose-400 to-orange-400',
-  'from-orange-400 to-amber-400',
-  'from-amber-400 to-yellow-400',
-  'from-emerald-400 to-teal-400',
-  'from-teal-400 to-cyan-400',
-  'from-cyan-400 to-sky-400',
-  'from-sky-400 to-blue-400',
-  'from-blue-400 to-indigo-400',
-  'from-indigo-400 to-violet-400',
-  'from-violet-400 to-purple-400',
-  'from-purple-400 to-fuchsia-400',
-  'from-fuchsia-400 to-pink-400',
+  'linear-gradient(135deg, #fb7185 0%, #fb923c 100%)',   // rose-400 -> orange-400
+  'linear-gradient(135deg, #fb923c 0%, #fbbf24 100%)',   // orange-400 -> amber-400
+  'linear-gradient(135deg, #fbbf24 0%, #facc15 100%)',   // amber-400 -> yellow-400
+  'linear-gradient(135deg, #34d399 0%, #2dd4bf 100%)',   // emerald-400 -> teal-400
+  'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',   // teal-400 -> cyan-400
+  'linear-gradient(135deg, #22d3ee 0%, #38bdf8 100%)',   // cyan-400 -> sky-400
+  'linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%)',   // sky-400 -> blue-400
+  'linear-gradient(135deg, #60a5fa 0%, #818cf8 100%)',   // blue-400 -> indigo-400
+  'linear-gradient(135deg, #818cf8 0%, #a78bfa 100%)',   // indigo-400 -> violet-400
+  'linear-gradient(135deg, #a78bfa 0%, #c084fc 100%)',   // violet-400 -> purple-400
+  'linear-gradient(135deg, #c084fc 0%, #e879f9 100%)',   // purple-400 -> fuchsia-400
+  'linear-gradient(135deg, #e879f9 0%, #f472b6 100%)',   // fuchsia-400 -> pink-400
 ]
 
 function hashString(str: string): number {
