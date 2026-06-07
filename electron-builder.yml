@@ -21,12 +21,18 @@ mac:
       arch:
         - x64
         - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
 win:
   icon: resources/icon.ico
   target:
     - target: nsis
       arch:
         - x64
+    # NOTE: Portable builds do NOT support auto-updates.
+    # Users who need auto-updates must install via the NSIS installer.
     - target: portable
       arch:
         - x64
