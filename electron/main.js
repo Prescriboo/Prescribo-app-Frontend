@@ -259,13 +259,7 @@ function createSplashWindow() {
   splashWindow.center()
   splashWindow.show()
 
-  // Fade out after delay
-  setTimeout(() => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close()
-      splashWindow = null
-    }
-  }, 2500)
+  // Splash will be closed when mainWindow is ready (see createMainWindow)
 }
 
 // ===================== MAIN WINDOW =====================
@@ -350,8 +344,13 @@ function createMainWindow() {
   // Uncomment for production debugging:
   // mainWindow.webContents.openDevTools({ mode: 'detach' })
 
-  // Show when ready
+  // Show when ready and dismiss splash
   mainWindow.once('ready-to-show', () => {
+    // Close splash before showing main window to avoid visual overlap
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close()
+      splashWindow = null
+    }
     if (state.maximized) mainWindow.maximize()
     mainWindow.show()
     mainWindow.focus()
@@ -363,6 +362,10 @@ function createMainWindow() {
   const showFallback = setTimeout(() => {
     if (mainWindow && !mainWindow.isVisible() && !mainWindow.isDestroyed()) {
       console.warn('[MainWindow] ready-to-show never fired, showing window anyway')
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close()
+        splashWindow = null
+      }
       mainWindow.show()
       mainWindow.focus()
       initAutoUpdater(mainWindow)
