@@ -10,6 +10,7 @@ interface ElectronWindowAPI {
 
 interface ElectronUpdaterAPI {
   check: () => Promise<{ success: boolean; updateInfo: any; error?: string }>;
+  download: () => Promise<{ success: boolean; manual?: boolean; error?: string }>;
   install: () => Promise<void>;
   onChecking: (callback: (data: any) => void) => () => void;
   onAvailable: (callback: (data: { version: string; releaseDate: string }) => void) => () => void;

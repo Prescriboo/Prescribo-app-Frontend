@@ -85,6 +85,7 @@ contextBridge.exposeInMainWorld('electron', {
   // Auto-updater
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),
+    download: () => ipcRenderer.invoke('updater:download'),
     install: () => ipcRenderer.invoke('updater:install'),
     onChecking: (callback) => {
       const handler = (_event, data) => callback(data)

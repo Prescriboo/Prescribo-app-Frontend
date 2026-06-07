@@ -9,12 +9,15 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onInstall: () => void;
+  onDownload?: () => void;
   isDownloaded: boolean;
+  platform?: string;
 }
 
-const GITHUB_REPO = 'your-username/prescribo-nextjs'; // TODO: Update this
+const GITHUB_REPO = 'Prescriboo/Prescribo-app-Frontend';
+const DOWNLOAD_URL = 'https://www.prescribo.co/download';
 
-export default function UpdateChangelogModal({ version, isOpen, onClose, onInstall, isDownloaded }: Props) {
+export default function UpdateChangelogModal({ version, isOpen, onClose, onInstall, onDownload, isDownloaded, platform }: Props) {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,12 +98,12 @@ export default function UpdateChangelogModal({ version, isOpen, onClose, onInsta
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
           <a
-            href={`https://github.com/${GITHUB_REPO}/releases/tag/${version}`}
+            href={DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
           >
-            View on GitHub <ExternalLink size={14} />
+            Go to Download Page <ExternalLink size={14} />
           </a>
           <div className="flex gap-2">
             <button
@@ -110,19 +113,37 @@ export default function UpdateChangelogModal({ version, isOpen, onClose, onInsta
               Later
             </button>
             {isDownloaded ? (
-              <button
-                onClick={onInstall}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center gap-2"
-              >
-                <RotateCcw size={14} /> Restart Now
-              </button>
+              platform === 'darwin' ? (
+                <button
+                  onClick={onInstall}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center gap-2"
+                >
+                  <ExternalLink size={14} /> Open Download Page
+                </button>
+              ) : (
+                <button
+                  onClick={onInstall}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center gap-2"
+                >
+                  <RotateCcw size={14} /> Restart Now
+                </button>
+              )
             ) : (
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 transition flex items-center gap-2"
-              >
-                <Download size={14} /> Downloading...
-              </button>
+              platform === 'darwin' ? (
+                <button
+                  onClick={onDownload}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 transition flex items-center gap-2"
+                >
+                  <ExternalLink size={14} /> Download from Website
+                </button>
+              ) : (
+                <button
+                  onClick={onDownload}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 transition flex items-center gap-2"
+                >
+                  <Download size={14} /> Download & Install
+                </button>
+              )
             )}
           </div>
         </div>

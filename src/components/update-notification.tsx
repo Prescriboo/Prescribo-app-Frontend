@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Download, RotateCcw, X, CheckCircle2, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { Download, RotateCcw, X, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import UpdateChangelogModal from './update-changelog-modal';
 
 interface UpdateInfo {
@@ -28,6 +28,7 @@ type UpdateState =
 export default function UpdateNotification() {
   const [state, setState] = useState<UpdateState>({ type: 'idle' });
   const [isElectron, setIsElectron] = useState(false);
+  const [platform, setPlatform] = useState('');
   const [dismissed, setDismissed] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [changelogVersion, setChangelogVersion] = useState('');
@@ -35,6 +36,7 @@ export default function UpdateNotification() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.electron) return;
     setIsElectron(true);
+    window.electron.getPlatform?.().then((p: string) => setPlatform(p));
 
     const unsubChecking = window.electron.updater.onChecking(() => {
       setState({ type: 'checking' });
@@ -88,6 +90,21 @@ export default function UpdateNotification() {
     }
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    if (!window.electron) return;
+    setState({ type: 'downloading', progress: { percent: 0, bytesPerSecond: 0, transferred: 0, total: 0 } });
+    try {
+      const result = await window.electron.updater.download();
+      if (!result.success) {
+        setState({ type: 'error', message: result.error || 'Download failed' });
+      }
+      // On macOS result.manual === true, on Windows the download-progress / update-downloaded
+      // events will fire normally.
+    } catch (err: any) {
+      setState({ type: 'error', message: err.message });
+    }
+  }, []);
+
   const handleInstall = useCallback(() => {
     if (!window.electron) return;
     window.electron.updater.install();
@@ -118,11 +135,11 @@ export default function UpdateNotification() {
   }
 
   if (state.type === 'available') {
+    const isMac = platform === 'darwin';
     return (
       <>
         <div
-          className={`${bannerClasses} bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 cursor-pointer`}
-          onClick={() => setShowChangelog(true)}
+          className={`${bannerClasses} bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800`}
         >
           <Download size={18} className="text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" />
           <div className="flex-1">
@@ -130,22 +147,41 @@ export default function UpdateNotification() {
               Update available - Prescribo {state.info.version}
             </p>
             <p className="text-xs text-brand-600 dark:text-brand-400 mt-0.5">
-              Downloading in the background... Click to see what's new.
+              {isMac
+                ? 'A new version is available. Download and replace the app manually.'
+                : 'A new version is available. Download and install the update.'}
             </p>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="text-brand-400 hover:text-brand-600 dark:hover:text-brand-300 shrink-0"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowChangelog(true)}
+              className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
+            >
+              What&apos;s new
+            </button>
+            <button
+              onClick={handleDownload}
+              className="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-medium hover:bg-brand-700 transition flex items-center gap-1.5"
+            >
+              {isMac ? <ExternalLink size={12} /> : <Download size={12} />}
+              {isMac ? 'Download' : 'Download & Install'}
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="text-brand-400 hover:text-brand-600 dark:hover:text-brand-300"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <UpdateChangelogModal
           version={changelogVersion}
           isOpen={showChangelog}
           onClose={() => setShowChangelog(false)}
           onInstall={handleInstall}
+          onDownload={handleDownload}
           isDownloaded={false}
+          platform={platform}
         />
       </>
     );
@@ -179,40 +215,57 @@ export default function UpdateNotification() {
   }
 
   if (state.type === 'downloaded') {
+    const isMac = platform === 'darwin';
     return (
       <>
         <div
-          className={`${bannerClasses} bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 cursor-pointer`}
-          onClick={() => setShowChangelog(true)}
+          className={`${bannerClasses} bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800`}
         >
           <CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium text-teal-800 dark:text-teal-300">
-              Prescribo {state.info.version} is ready to install
+              {isMac
+                ? `Prescribo ${state.info.version} download started`
+                : `Prescribo ${state.info.version} is ready to install`}
             </p>
             <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
-              Restart the app to apply the update. Click to see what's new.
+              {isMac
+                ? 'The new version has been opened in your browser. Quit and replace the app when ready.'
+                : 'Restart the app to apply the update.'}
             </p>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleInstall(); }}
-            className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition flex items-center gap-1.5 shrink-0"
-          >
-            <RotateCcw size={12} /> Restart
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="text-teal-400 hover:text-teal-600 dark:hover:text-teal-300 shrink-0"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {isMac ? (
+              <button
+                onClick={handleInstall}
+                className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition flex items-center gap-1.5"
+              >
+                <ExternalLink size={12} /> Open Page
+              </button>
+            ) : (
+              <button
+                onClick={handleInstall}
+                className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition flex items-center gap-1.5"
+              >
+                <RotateCcw size={12} /> Restart
+              </button>
+            )}
+            <button
+              onClick={handleDismiss}
+              className="text-teal-400 hover:text-teal-600 dark:hover:text-teal-300"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <UpdateChangelogModal
           version={changelogVersion}
           isOpen={showChangelog}
           onClose={() => setShowChangelog(false)}
           onInstall={handleInstall}
+          onDownload={handleDownload}
           isDownloaded={true}
+          platform={platform}
         />
       </>
     );

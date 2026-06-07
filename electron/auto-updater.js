@@ -1,14 +1,19 @@
 const { autoUpdater } = require('electron-updater')
-const { ipcMain, dialog, app } = require('electron')
+const { ipcMain, dialog, app, shell } = require('electron')
 
 // Auto-updater configuration
 // Requires GitHub releases with proper publish config in electron-builder.yml
-// macOS NOTE: Auto-updates require code-signed builds. Unsigned macOS apps
-// will fail silently or show an error. Use CSC_IDENTITY_AUTO_DISCOVERY=false
-// in dev, but sign for production macOS distribution.
+//
+// SAFETY GUARD: We NEVER auto-download or auto-install updates.
+// Instead we notify the user and let them choose.
+// This prevents:
+//   - macOS code signature failures on unsigned builds
+//   - Windows permission issues during silent installs
+//   - Users being caught off-guard by automatic restarts
 
 let mainWindow = null
 let updateCheckInterval = null
+const isMac = process.platform === 'darwin'
 
 // How often to check for updates (in production) - 30 minutes
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000
@@ -34,9 +39,34 @@ ipcMain.handle('updater:check', async () => {
   }
 })
 
+ipcMain.handle('updater:download', async () => {
+  if (!app.isPackaged) {
+    return { success: false, error: 'Not in packaged app' }
+  }
+  // On macOS we skip electron-updater download and open the website instead
+  if (isMac) {
+    const downloadUrl = `https://www.prescribo.co/download`
+    shell.openExternal(downloadUrl)
+    return { success: true, manual: true }
+  }
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
+  } catch (err) {
+    console.error('[AutoUpdater] Download failed:', err.message)
+    return { success: false, error: err.message }
+  }
+})
+
 ipcMain.handle('updater:install', () => {
   if (!app.isPackaged || process.env.NODE_ENV === 'development') {
     console.log('[AutoUpdater] Install skipped - development mode')
+    return
+  }
+  if (isMac) {
+    // Unsigned macOS apps cannot auto-install. Open the website download page instead.
+    const downloadUrl = `https://www.prescribo.co/download`
+    shell.openExternal(downloadUrl)
     return
   }
   autoUpdater.quitAndInstall(false, true)
@@ -51,8 +81,8 @@ function initAutoUpdater(window) {
     return
   }
 
-  // Optional: force check on start (disabled by default - uncomment if desired)
-  // checkForUpdates()
+  // CRITICAL: Never auto-download. We notify the user and let them choose.
+  autoUpdater.autoDownload = false
 
   // Periodic checks
   updateCheckInterval = setInterval(() => {
@@ -100,23 +130,6 @@ function initAutoUpdater(window) {
       version: info.version,
       releaseDate: info.releaseDate,
     })
-
-    // Show native dialog prompting user to restart
-    dialog
-      .showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Update Ready',
-        message: `Prescribo ${info.version} is ready to install.`,
-        detail: 'The update has been downloaded. Restart the app to apply it.',
-        buttons: ['Restart Now', 'Later'],
-        defaultId: 0,
-        cancelId: 1,
-      })
-      .then(({ response }) => {
-        if (response === 0) {
-          autoUpdater.quitAndInstall(false, true)
-        }
-      })
   })
 }
 
