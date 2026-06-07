@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
-import { Loader2, ClipboardPaste, ExternalLink } from 'lucide-react'
+import { Loader2, ClipboardPaste, ExternalLink, KeyRound, Sparkles } from 'lucide-react'
 
 const SEGMENT_COUNT = 4
 const LICENSE_REGEX = /^PRSC-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/
@@ -127,27 +127,37 @@ export default function ActivatePage() {
   const allFilled = keys.every((k) => k.length === 4)
 
   return (
-    <div className="bg-white border border-border rounded-2xl p-8 w-full max-w-xl shadow-2xl text-center relative z-10">
-      <img src="/prescribo_logo_transparent.png" alt="Prescribo" className="w-44 h-auto mx-auto mb-6" />
-
-      <h2 className="text-xl font-bold mb-1">Activate Prescribo</h2>
-      <p className="text-slate-500 text-sm mb-6">Enter your license key to unlock the full version.</p>
+    <div className="bg-white border border-border rounded-3xl p-10 w-full max-w-lg shadow-2xl text-center relative z-10">
+      {/* Logo */}
+      <div className="mb-8">
+        <img
+          src="/prescribo_logo_transparent.png"
+          alt="Prescribo"
+          className="h-16 w-auto mx-auto mb-5"
+        />
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">
+          Activate Prescribo
+        </h1>
+        <p className="text-base text-slate-500 leading-relaxed">
+          Enter your license key to unlock the full version
+        </p>
+      </div>
 
       {/* License key input */}
       <div
         ref={containerRef}
-        className="flex items-center justify-center gap-1 mb-6 select-none"
+        className="flex items-center justify-center gap-1.5 mb-5 select-none"
         onPaste={handlePaste}
       >
         {/* Prefix */}
-        <div className="w-16 h-12 flex items-center justify-center rounded-lg border-2 border-primary-100 bg-primary-50 text-primary text-lg font-bold uppercase tracking-widest">
+        <div className="h-[3.25rem] w-[4.5rem] flex items-center justify-center rounded-xl border-2 border-primary-100 bg-gradient-to-b from-primary-50 to-primary-100/50 text-primary text-base font-black uppercase tracking-[0.2em] shadow-sm">
           PRSC
         </div>
-        <span className="text-lg font-bold text-slate-400">-</span>
+        <span className="text-xl font-bold text-slate-300">-</span>
 
         {/* Segments */}
         {keys.map((key, i) => (
-          <div key={i} className="flex items-center gap-1">
+          <div key={i} className="flex items-center gap-1.5">
             <input
               ref={(el) => { inputsRef.current[i] = el }}
               type="text"
@@ -155,7 +165,7 @@ export default function ActivatePage() {
               autoCapitalize="characters"
               autoComplete="off"
               spellCheck={false}
-              className="w-14 h-12 text-center text-lg font-bold border-2 border-border rounded-lg uppercase tracking-widest focus:border-primary focus:ring-4 focus:ring-primary-100 focus:-translate-y-0.5 transition-all outline-none bg-white disabled:opacity-50"
+              className="w-[4.5rem] h-[3.25rem] text-center text-xl font-black border-2 border-slate-200 rounded-xl uppercase tracking-[0.15em] text-slate-800 placeholder:text-slate-300 placeholder:font-bold focus:border-primary focus:ring-[3px] focus:ring-primary-100 focus:-translate-y-0.5 transition-all outline-none bg-white disabled:opacity-50 shadow-sm"
               maxLength={4}
               value={key}
               onChange={(e) => handleChange(i, e.target.value)}
@@ -164,46 +174,46 @@ export default function ActivatePage() {
               disabled={loading}
             />
             {i < SEGMENT_COUNT - 1 && (
-              <span className="text-lg font-bold text-slate-400">-</span>
+              <span className="text-xl font-bold text-slate-300">-</span>
             )}
           </div>
         ))}
       </div>
 
       {/* Helper text */}
-      <p className="text-xs text-slate-400 mb-6 flex items-center justify-center gap-1.5">
-        <ClipboardPaste size={12} />
-        Copy a license key and it will paste automatically. Or press Ctrl+V anywhere.
-      </p>
+      <div className="flex items-center justify-center gap-2 text-sm text-slate-400 mb-7 bg-slate-50 rounded-lg py-2.5 px-4">
+        <ClipboardPaste size={14} className="text-slate-400 shrink-0" />
+        <span>Copy a license key and it will paste automatically. Or press <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-xs font-mono font-bold text-slate-600">Ctrl+V</kbd> anywhere.</span>
+      </div>
 
       {/* Activate button */}
       <Button
         size="lg"
-        className="w-full"
+        className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary-200/50"
         onClick={handleActivate}
         disabled={loading || !allFilled}
       >
         {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path d="M5 13l4 4L19 7" />
-          </svg>
+          <KeyRound className="w-5 h-5" />
         )}
         <span className="ml-2">{loading ? 'Activating...' : 'Activate License'}</span>
       </Button>
 
       {/* Demo mode */}
-      <Button
-        variant="ghost"
-        className="w-full mt-3 h-10 text-sm text-slate-500 hover:text-primary"
+      <button
+        className="w-full mt-4 h-11 text-sm font-medium text-slate-500 hover:text-primary transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
         onClick={handleDemo}
         disabled={loading}
       >
+        <Sparkles size={14} />
         Continue in Demo Mode
-      </Button>
+      </button>
 
-      <p className="mt-4 text-xs text-slate-400">Trial mode available for 7 days</p>
+      <p className="mt-4 text-xs text-slate-400 font-medium">
+        Trial mode available for 7 days
+      </p>
 
       {/* Contact Admin Support Modal */}
       <Modal
