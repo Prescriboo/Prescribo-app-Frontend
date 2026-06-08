@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron')
 const http = require('http')
+const os = require('os')
 const { getBackendUrl } = require('./api')
 
 function apiGet(path) {
@@ -83,6 +84,7 @@ ipcMain.handle('license:activate', async (event, key) => {
     const result = await apiPost('/api/auth/activate', {
       license_key: key,
       machine_id: machineId.machine_id,
+      device_name: os.hostname(),
     })
     return { success: true, ...result }
   } catch (err) {
