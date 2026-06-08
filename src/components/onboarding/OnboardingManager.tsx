@@ -43,12 +43,13 @@ export default function OnboardingManager() {
   const hasClinicProfile = Boolean(clinic?.doctorName?.trim() && clinic?.clinicName?.trim())
 
   // Auto-mark complete if profile exists but onboarding state was lost
+  // Only run when tour is NOT actively running (prevents killing a restarted tour)
   useEffect(() => {
-    if (hasClinicProfile && !hasCompleted && !hasSkipped) {
+    if (hasClinicProfile && !hasCompleted && !hasSkipped && !isActive) {
       completeWizard()
       finishTour()
     }
-  }, [hasClinicProfile, hasCompleted, hasSkipped, completeWizard, finishTour])
+  }, [hasClinicProfile, hasCompleted, hasSkipped, isActive, completeWizard, finishTour])
 
   // Auto-start wizard on first mount if not completed
   useEffect(() => {
@@ -86,8 +87,10 @@ export default function OnboardingManager() {
   // Skip onboarding entirely in demo mode
   if (demoMode) return null
 
-  // Don't show anything if already completed, skipped, or profile already exists
-  if (hasCompleted || hasSkipped || hasClinicProfile) return null
+  // Don't show anything if already completed or skipped
+  // hasClinicProfile is NOT a blocker — it only prevents wizard auto-start,
+  // but must NOT kill an active tour or block a restarted one.
+  if (hasCompleted || hasSkipped) return null
 
   if (!isActive && !wizardCompleted) {
     return <SetupWizard />
