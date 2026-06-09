@@ -21,6 +21,7 @@ import { SingleAutocompleteInput } from '@/components/ui/single-autocomplete-inp
 import { Modal } from '@/components/ui/modal'
 import { RotateCcw, Save, Plus, Trash2, ArrowLeft, Printer, Pencil, Clock, FileText, FileDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import PrescriptionPaper from '@/components/prescription/PrescriptionPaper'
 
 export default function PrescriptionsClientPage() {
   const searchParams = useSearchParams()
@@ -268,10 +269,6 @@ export default function PrescriptionsClientPage() {
 
   // ===================== VIEW MODE =====================
   if (viewMode && viewRx) {
-    const history = viewRx.updateHistory || []
-    const originalCount = viewRx.medicines.length
-    const viewPatient = getPatient(viewRx.patientId)
-
     return (
       <div className="flex h-full">
         <div className="flex-1 p-6 overflow-y-auto min-w-0 flex flex-col items-center">
@@ -307,113 +304,13 @@ export default function PrescriptionsClientPage() {
           </div>
 
           {/* Prescription Paper */}
-          <div className={cn(
-            "bg-white border border-gray-300 rounded shadow-xl relative print-area flex flex-col",
-            paperClasses
-          )}>
-            <div className="paper-watermark">PRESCRIBO</div>
-
-            <div className="flex-1">
-              <div className="text-center border-b-[2.5px] border-primary pb-3 mb-3 p-6 pt-8">
-              <div className="text-[1.05rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
-              <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
-              <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
-              {clinic.specialization && <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.specialization}</div>}
-              {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ') && (
-                <div className="text-[0.7rem] text-slate-500 mt-0.5">
-                  {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ')}
-                </div>
-              )}
-            </div>
-
-            <div className="text-[0.8rem] leading-relaxed text-slate-900 px-6">
-              <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Name:</span> <span className="font-medium">{viewRx.patientName}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Date:</span> <span className="font-medium">{viewRx.date}</span></div>
-              </div>
-              <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age:</span> <span className="font-medium">{viewPatient?.age ?? '-'}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Sex:</span> <span className="font-medium">{viewPatient?.gender ?? '-'}</span></div>
-              </div>
-              <div className="flex justify-between mb-1.5 gap-2 flex-wrap">
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{viewPatient?.place ?? '-'}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Doctor:</span> <span className="font-medium">{viewRx.doctor}</span></div>
-              </div>
-              <div className="my-2 py-1.5 border-t border-b border-gray-200">
-                <span className="font-bold text-slate-500 text-[0.7rem]">Diagnosis:</span> <span className="font-medium">{viewRx.diagnosis}</span>
-              </div>
-
-              {/* Medicines Table */}
-              <div className="mt-3">
-                <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
-                  <div>No</div>
-                  <div>Name</div>
-                  <div>Dosage</div>
-                  <div>Frequency</div>
-                  <div>Duration</div>
-                  <div>Instruction</div>
-                </div>
-                {viewRx.medicines.slice(0, originalCount).map((med, i) => (
-                  <div key={`orig-${i}`} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
-                    <div className="font-extrabold text-slate-500">{i + 1}</div>
-                    <div className="font-semibold">{med.name}</div>
-                    <div>{med.dose || '-'}</div>
-                    <div>{med.freq || '-'}</div>
-                    <div>{med.dur || '-'}</div>
-                    <div className="italic text-slate-400">{med.inst || '-'}</div>
-                  </div>
-                ))}
-
-                {history.map((update, idx) => {
-                  const startIndex = originalCount + history.slice(0, idx).reduce((sum, h) => sum + h.medicines.length, 0)
-                  return (
-                    <div key={`update-${idx}`}>
-                      <div className="flex items-center gap-2 my-1.5 py-1 px-2 bg-teal-50/60 border border-teal-100/50 rounded">
-                        <Clock className="w-3 h-3 text-teal flex-shrink-0" />
-                        <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                          <span className="text-[0.7rem] font-semibold text-teal-dark">Updated {update.date}</span>
-                          <span className="text-[0.6rem] text-slate-400">· {update.medicines.length} new</span>
-                        </div>
-                      </div>
-                      {update.medicines.map((med, mi) => (
-                        <div key={`upd-${idx}-${mi}`} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
-                          <div className="font-extrabold text-slate-500">{startIndex + mi + 1}</div>
-                          <div className="font-semibold">{med.name}</div>
-                          <div>{med.dose || '-'}</div>
-                          <div>{med.freq || '-'}</div>
-                          <div>{med.dur || '-'}</div>
-                          <div className="italic text-slate-400">{med.inst || '-'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            </div>
-
-            {templateStyle === 'header-footer' && (
-              <>
-                <div className="px-6 pb-2 flex justify-end">
-                  <div className="text-center">
-                    <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-                    <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
-                  </div>
-                </div>
-                <div className="mt-auto pt-3 px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: prescriptionFooterHtml }} />
-                </div>
-              </>
-            )}
-            {templateStyle === 'header-only' && (
-              <div className="mt-auto px-6 pb-6 flex justify-end">
-                <div className="text-center">
-                  <div className="font-[cursive] text-[1rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-                  <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[120px]">Signature</div>
-                </div>
-              </div>
-            )}
-          </div>
+          <PrescriptionPaper
+            data={viewRx}
+            patient={getPatient(viewRx.patientId)}
+            paperSize={paperSize}
+            mode="print"
+            className="print-area"
+          />
         </div>
       </div>
     )
@@ -584,88 +481,11 @@ export default function PrescriptionsClientPage() {
           </div>
         </div>
 
-        <div className={cn(
-          "bg-white border border-gray-300 rounded shadow-xl relative flex-shrink-0 mx-auto flex flex-col",
-          paperSize === 'A4' ? 'w-[380px] min-h-[537px]' : 'w-[380px] min-h-[380px]'
-        )}>
-          <div className="paper-watermark">PRESCRIBO</div>
-          <div className="flex-1">
-            <div className="text-center border-b-[2.5px] border-primary pb-2 mb-2 p-4 pt-5">
-            <div className="text-[0.95rem] font-extrabold text-primary-dark tracking-wide">{clinic.clinicName}</div>
-            <div className="text-sm font-semibold text-slate-900 mt-0.5">{clinic.doctorName}</div>
-            <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.doctorQual}</div>
-            {clinic.specialization && <div className="text-[0.7rem] text-slate-500 mt-0.5">{clinic.specialization}</div>}
-            {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ') && (
-              <div className="text-[0.7rem] text-slate-500 mt-0.5">
-                {[clinic.clinicAddressLine1, clinic.clinicAddressLine2, clinic.city, clinic.state, clinic.pincode].filter(Boolean).join(', ')}
-              </div>
-            )}
-          </div>
-          <div className="text-[0.8rem] leading-relaxed text-slate-900 px-4">
-            <div className="flex justify-between mb-1 gap-2 flex-wrap">
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Name:</span> <span className="font-medium">{currentRx.patientName || '-'}</span></div>
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Date:</span> <span className="font-medium">{currentRx.date || '-'}</span></div>
-            </div>
-            <div className="flex justify-between mb-1 gap-2 flex-wrap">
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Age:</span> <span className="font-medium">{currentRx.patientAge || '-'}</span></div>
-              <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Sex:</span> <span className="font-medium">{currentRx.patientGender || '-'}</span></div>
-            </div>
-            <div className="flex justify-between mb-1 gap-2 flex-wrap">
-              {currentRx.patientPlace && <div className="flex gap-1"><span className="font-bold text-slate-500 text-[0.7rem]">Place:</span> <span className="font-medium">{currentRx.patientPlace}</span></div>}
-            </div>
-            <div className="my-2 py-1 border-t border-b border-gray-200">
-              <span className="font-bold text-slate-500 text-[0.7rem]">Complaint:</span> <span>{currentRx.complaint || '-'}</span><br/>
-              <span className="font-bold text-slate-500 text-[0.7rem]">Diagnosis:</span> <span>{currentRx.diagnosis || '-'}</span>
-            </div>
-
-            <div className="mt-3">
-              <div className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.6rem] font-bold text-slate-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-1">
-                <div>No</div>
-                <div>Name</div>
-                <div>Dosage</div>
-                <div>Frequency</div>
-                <div>Duration</div>
-                <div>Instruction</div>
-              </div>
-              {currentRx.medicines.filter(m => m.name).map((med, i) => (
-                <div key={i} className="grid grid-cols-[16px_1.5fr_1fr_1fr_1fr_1.2fr] gap-1 text-[0.7rem] py-1 border-b border-dashed border-gray-200">
-                  <div className="font-extrabold text-slate-500">{i + 1}</div>
-                  <div className="font-semibold">{med.name}</div>
-                  <div>{med.dose || '-'}</div>
-                  <div>{med.freq || '-'}</div>
-                  <div>{med.dur || '-'}</div>
-                  <div className="italic text-slate-400">{med.inst || '-'}</div>
-                </div>
-              ))}
-              {currentRx.medicines.filter(m => m.name).length === 0 && <div className="text-slate-400 text-[0.75rem] py-3">No medicines added yet</div>}
-            </div>
-            {currentRx.notes && <div className="mt-2 text-[0.75rem]">
-              <span className="font-bold text-slate-500">Advice:</span> <span>{currentRx.notes}</span>
-            </div>}
-          </div>
-          </div>
-          {templateStyle === 'header-footer' && (
-            <>
-              <div className="px-4 pb-2 flex justify-end">
-                <div className="text-center">
-                  <div className="font-[cursive] text-[0.9rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-                  <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
-                </div>
-              </div>
-              <div className="mt-auto pt-2 px-4 pb-4">
-                <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: prescriptionFooterHtml }} />
-              </div>
-            </>
-          )}
-          {templateStyle === 'header-only' && (
-            <div className="mt-auto px-4 pb-4 flex justify-end">
-              <div className="text-center">
-                <div className="font-[cursive] text-[0.95rem] text-primary-dark mb-0.5">{clinic.signature}</div>
-                <div className="border-t border-slate-900 pt-0.5 text-[0.65rem] w-[100px]">Signature</div>
-              </div>
-            </div>
-          )}
-        </div>
+        <PrescriptionPaper
+          data={currentRx}
+          paperSize={paperSize}
+          mode="preview"
+        />
 
         <div className="flex gap-2.5 mt-4 w-full max-w-[380px] mx-auto">
           <Button variant="outline" className="flex-1" onClick={() => { resetCurrentRx(); addToast('Form reset', 'info') }}>

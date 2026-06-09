@@ -480,16 +480,24 @@ app.whenReady().then(async () => {
     // This avoids Next.js App Router client-side navigation issues
     // with the file:// protocol (RSC payload fetches fail on file://).
     const distPath = path.join(__dirname, '../dist')
+    const STATIC_SERVER_PORT = 3010
     try {
-      const result = await startStaticServer(distPath, 0)
+      const result = await startStaticServer(distPath, STATIC_SERVER_PORT)
       staticServer = result.server
       staticServerUrl = result.url
     } catch (err) {
-      console.error('[StaticServer] Failed to start:', err.message)
+      console.warn(`[StaticServer] Port ${STATIC_SERVER_PORT} unavailable, falling back to random port:`, err.message)
+      try {
+        const result = await startStaticServer(distPath, 0)
+        staticServer = result.server
+        staticServerUrl = result.url
+      } catch (fallbackErr) {
+        console.error('[StaticServer] Failed to start:', fallbackErr.message)
+      }
     }
   } else {
     // In dev, assume backend is on default port or set by env
-    setBackendUrl(process.env.API_URL || 'http://localhost:8000')
+    setBackendUrl(process.env.API_URL || 'http://127.0.0.1:8000')
   }
 
   // Create main window immediately so app doesn't quit when splash closes.

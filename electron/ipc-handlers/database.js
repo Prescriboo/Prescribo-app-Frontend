@@ -1,7 +1,7 @@
 const { ipcMain } = require('electron')
 const { getBackendUrl } = require('./api')
 
-const BASE = () => getBackendUrl() || 'http://localhost:8000'
+const BASE = () => getBackendUrl() || 'http://127.0.0.1:8000'
 
 async function apiFetch(path, options = {}) {
   const url = `${BASE()}${path}`
