@@ -1,4 +1,4 @@
-const { ipcMain, dialog } = require('electron')
+const { ipcMain, dialog, BrowserWindow } = require('electron')
 const fs = require('fs')
 
 ipcMain.handle('export:toCSV', async (event, data, filename) => {
@@ -18,14 +18,56 @@ ipcMain.handle('export:toCSV', async (event, data, filename) => {
 })
 
 ipcMain.handle('export:toPDF', async (event, data, filename) => {
-  const { filePath } = await dialog.showSaveDialog({
+  const parent = BrowserWindow.fromWebContents(event.sender)
+
+  const { filePath } = await dialog.showSaveDialog(parent, {
     defaultPath: filename || `export-${Date.now()}.pdf`,
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
   })
 
   if (!filePath) return { cancelled: true }
 
-  return { success: true, path: filePath }
+  let html = ''
+  if (typeof data === 'string') {
+    html = data
+  } else if (Array.isArray(data) && data.length > 0) {
+    const headers = Object.keys(data[0])
+      .map((h) => `<th style="border:1px solid #ccc;padding:4px;">${h}</th>`)
+      .join('')
+    const rows = data
+      .map((row) =>
+        Object.values(row)
+          .map((v) => `<td style="border:1px solid #ccc;padding:4px;">${v ?? ''}</td>`)
+          .join('')
+      )
+      .map((r) => `<tr>${r}</tr>`)
+      .join('')
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table style="border-collapse:collapse;width:100%;"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></body></html>`
+  } else {
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><pre>${JSON.stringify(data, null, 2)}</pre></body></html>`
+  }
+
+  const hiddenWin = new BrowserWindow({
+    show: false,
+    width: 800,
+    height: 600,
+  })
+
+  try {
+    await hiddenWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    const pdfData = await hiddenWin.webContents.printToPDF({
+      pageSize: 'A4',
+      margins: { marginType: 'default' },
+      printBackground: true,
+    })
+    fs.writeFileSync(filePath, pdfData)
+    return { success: true, path: filePath }
+  } catch (err) {
+    console.error('[ExportToPDF] Error:', err)
+    return { success: false, error: err.message }
+  } finally {
+    hiddenWin.destroy()
+  }
 })
 
 ipcMain.handle('export:toJSON', async (event, data, filename) => {
