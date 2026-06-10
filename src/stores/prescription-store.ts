@@ -2,7 +2,8 @@
 
 import { create } from 'zustand'
 import { Prescription, MedicineRow } from '@/types'
-import { prescriptionsApi } from '@/lib/api'
+import { prescriptionsApi, authApi } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
 
 interface PrescriptionState {
   prescriptions: Prescription[]
@@ -113,8 +114,22 @@ export const usePrescriptionStore = create<PrescriptionState>((set, get) => ({
             })
             const mapped = mapApiPrescription(created)
             set((s) => ({ prescriptions: [mapped, ...s.prescriptions] }))
+            // Refresh auth state so trial counter updates in real-time
+            try {
+              const authState = await authApi.state()
+              useAuthStore.getState().hydrateFromApi(authState)
+            } catch {}
             return mapped
           } catch (e: any) {
+            // Refresh auth state in case trial just expired
+            try {
+              const authState = await authApi.state()
+              useAuthStore.getState().hydrateFromApi(authState)
+            } catch {}
+            // If trial expired (or any permission error), don't silently fallback
+            if (e.message?.includes('Trial expired') || e.message?.includes('activate')) {
+              throw e
+            }
             console.warn('API addPrescription failed, falling back to local:', e.message)
           }
         }

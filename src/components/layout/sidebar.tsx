@@ -24,7 +24,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
-  const { demoMode } = useAuthStore()
+  const { demoMode, trialExpired, trialPrescriptionsUsed, trialMaxPrescriptions, trialDaysRemaining } = useAuthStore()
 
   const currentView = pathname.split('/')[1] || 'dashboard'
 
@@ -75,16 +75,21 @@ export function Sidebar() {
       {!sidebarCollapsed && (
         <div className="mt-auto pt-4 border-t border-border text-center">
           <div className="text-[0.7rem] text-slate-400 font-medium">Prescribo v1.0.0</div>
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-bold mt-2 border ${demoMode ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-success-50 text-success border-green-200'}`}>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-bold mt-2 border ${demoMode ? (trialExpired ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-600 border-amber-200') : 'bg-success-50 text-success border-green-200'}`}>
             <CheckCircle className="w-3 h-3" />
-            {demoMode ? 'Demo Mode' : 'Pro License'}
+            {demoMode ? (trialExpired ? 'Trial Expired' : 'Trial Mode') : 'Pro License'}
           </div>
+          {demoMode && !trialExpired && (
+            <div className="text-[0.7rem] text-slate-500 mt-1.5">
+              {trialPrescriptionsUsed}/{trialMaxPrescriptions} prescriptions · {trialDaysRemaining}d left
+            </div>
+          )}
           {demoMode && (
             <button
               onClick={() => router.push('/activate')}
               className="block mx-auto mt-2 text-xs font-semibold text-primary hover:text-primary/80 hover:underline transition-colors"
             >
-              Activate License →
+              {trialExpired ? 'Activate to continue →' : 'Activate License →'}
             </button>
           )}
           <div className="text-[0.7rem] text-slate-400 mt-1.5">Last sync: Just now</div>

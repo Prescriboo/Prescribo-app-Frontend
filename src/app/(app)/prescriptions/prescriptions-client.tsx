@@ -11,6 +11,7 @@ import { useDurationStore } from '@/stores/duration-store'
 import { useComplaintStore } from '@/stores/complaint-store'
 import { useDiagnosisStore } from '@/stores/diagnosis-store'
 import { useUIStore } from '@/stores/ui-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { useMedicineHistoryStore } from '@/stores/medicine-history-store'
 
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ export default function PrescriptionsClientPage() {
   const { entries: medicineList } = useMedicineHistoryStore()
   const { items: diagnoses } = useDiagnosisStore()
   const { addToast } = useUIStore()
+  const { trialExpired } = useAuthStore()
 
   const patientId = searchParams.get('patient')
   const represcribeId = searchParams.get('represcribe')
@@ -143,50 +145,64 @@ export default function PrescriptionsClientPage() {
   }, [patientId, represcribeId, viewMode, updateId])
 
   const handleSave = async () => {
+    if (trialExpired) {
+      addToast('Trial expired. Please activate your license to save prescriptions.', 'error')
+      router.push('/activate')
+      return
+    }
     if (!currentRx.patientName.trim()) { addToast('Please enter patient name', 'error'); return }
     const meds = currentRx.medicines.filter(m => m.name.trim())
     if (meds.length === 0) { addToast('Please add at least one medicine', 'error'); return }
 
-    if (editingRxId) {
-      const previous = previousMedicinesRef.current
-      const newMedicines = meds.filter(m =>
-        !previous.some(pm => pm.name === m.name && pm.dose === m.dose && pm.freq === m.freq && pm.dur === m.dur && pm.inst === m.inst)
-      )
-      if (newMedicines.length === 0) {
-        addToast('No new medicines to add', 'error')
+    try {
+      if (editingRxId) {
+        const previous = previousMedicinesRef.current
+        const newMedicines = meds.filter(m =>
+          !previous.some(pm => pm.name === m.name && pm.dose === m.dose && pm.freq === m.freq && pm.dur === m.dur && pm.inst === m.inst)
+        )
+        if (newMedicines.length === 0) {
+          addToast('No new medicines to add', 'error')
+          return
+        }
+        await updatePrescription(editingRxId, newMedicines, meds, currentRx.date || new Date().toISOString().split('T')[0])
+        addToast('Prescription updated with new medicines!', 'success')
+        setTimeout(() => { resetCurrentRx(); router.push('/history') }, 500)
         return
       }
-      await updatePrescription(editingRxId, newMedicines, meds, currentRx.date || new Date().toISOString().split('T')[0])
-      addToast('Prescription updated with new medicines!', 'success')
-      setTimeout(() => { resetCurrentRx(); router.push('/history') }, 500)
-      return
-    }
 
-    let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
-    if (!p) {
-      p = await addPatient({
-        name: currentRx.patientName,
-        age: currentRx.patientAge || '-',
-        gender: currentRx.patientGender || '-',
-        place: currentRx.patientPlace || '-',
-        email: '',
-        allergies: '',
-        conditions: '',
+      let p = patients.find(x => x.name.toLowerCase() === currentRx.patientName.toLowerCase())
+      if (!p) {
+        p = await addPatient({
+          name: currentRx.patientName,
+          age: currentRx.patientAge || '-',
+          gender: currentRx.patientGender || '-',
+          place: currentRx.patientPlace || '-',
+          email: '',
+          allergies: '',
+          conditions: '',
+        })
+      }
+
+      const savedRx = await addPrescription({
+        patientId: p.id,
+        patientName: p.name,
+        date: currentRx.date || new Date().toISOString().split('T')[0],
+        diagnosis: currentRx.diagnosis || '',
+        medicines: meds,
+        doctor: clinic.doctorName,
       })
+
+      addToast('Prescription saved successfully!', 'success')
+      setSavedRxId(savedRx.id)
+      setTimeout(() => { setShowPrintModal(true) }, 300)
+    } catch (e: any) {
+      if (e.message?.includes('Trial expired') || e.message?.includes('activate')) {
+        addToast('Trial expired. Please activate your license to continue.', 'error')
+        router.push('/activate')
+      } else {
+        addToast(e.message || 'Failed to save prescription', 'error')
+      }
     }
-
-    const savedRx = await addPrescription({
-      patientId: p.id,
-      patientName: p.name,
-      date: currentRx.date || new Date().toISOString().split('T')[0],
-      diagnosis: currentRx.diagnosis || '',
-      medicines: meds,
-      doctor: clinic.doctorName,
-    })
-
-    addToast('Prescription saved successfully!', 'success')
-    setSavedRxId(savedRx.id)
-    setTimeout(() => { setShowPrintModal(true) }, 300)
   }
 
   const handlePrint = () => {
@@ -512,7 +528,7 @@ export default function PrescriptionsClientPage() {
           <Button variant="outline" className="flex-1" onClick={() => { resetCurrentRx(); addToast('Form reset', 'info') }}>
             <RotateCcw className="w-4 h-4" /> Reset
           </Button>
-          <Button className="flex-1" onClick={handleSave}>
+          <Button className="flex-1" onClick={handleSave} disabled={trialExpired}>
             <Save className="w-4 h-4" /> {editingRxId ? 'Update Prescription' : 'Save & Print'}
           </Button>
         </div>

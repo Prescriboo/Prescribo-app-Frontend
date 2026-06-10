@@ -267,6 +267,10 @@ export interface AuthState {
   grace_period_until?: string
   last_refreshed_at?: string
   machine_id?: string
+  trial_prescriptions_used?: number
+  trial_max_prescriptions?: number
+  trial_expired?: boolean
+  trial_days_remaining?: number
 }
 
 export interface LicenceStatus {

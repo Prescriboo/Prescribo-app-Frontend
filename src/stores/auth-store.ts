@@ -9,6 +9,10 @@ interface AuthState {
   pin: string
   hasPin: boolean
   demoMode: boolean
+  trialPrescriptionsUsed: number
+  trialMaxPrescriptions: number
+  trialExpired: boolean
+  trialDaysRemaining: number | null
   hydrated: boolean
   activate: (key: string) => Promise<void>
   skipActivation: () => Promise<void>
@@ -21,6 +25,10 @@ interface AuthState {
     pin?: string
     has_pin?: boolean
     demo_mode?: boolean
+    trial_prescriptions_used?: number
+    trial_max_prescriptions?: number
+    trial_expired?: boolean
+    trial_days_remaining?: number
   }) => void
 }
 
@@ -30,6 +38,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   pin: '',
   hasPin: false,
   demoMode: false,
+  trialPrescriptionsUsed: 0,
+  trialMaxPrescriptions: 10,
+  trialExpired: false,
+  trialDaysRemaining: null,
   hydrated: false,
 
   activate: async (key) => {
@@ -40,6 +52,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       licenseKey: result.license_key || key,
       demoMode: result.demo_mode || false,
       hasPin: result.has_pin || false,
+      trialExpired: result.trial_expired || false,
+      trialPrescriptionsUsed: result.trial_prescriptions_used || 0,
+      trialDaysRemaining: result.trial_days_remaining ?? null,
     })
   },
 
@@ -51,6 +66,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       licenseKey: result.license_key || '',
       demoMode: result.demo_mode || true,
       hasPin: result.has_pin || false,
+      trialExpired: result.trial_expired || false,
+      trialPrescriptionsUsed: result.trial_prescriptions_used || 0,
+      trialDaysRemaining: result.trial_days_remaining ?? null,
     })
   },
 
@@ -66,7 +84,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await authApi.logout()
-    set({ isActivated: false, licenseKey: '', pin: '', hasPin: false, demoMode: false, hydrated: true })
+    set({ isActivated: false, licenseKey: '', pin: '', hasPin: false, demoMode: false, trialExpired: false, trialPrescriptionsUsed: 0, trialDaysRemaining: null, hydrated: true })
   },
 
   hydrateFromApi: (apiState) => set({
@@ -75,6 +93,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     pin: apiState.pin ?? '',
     hasPin: apiState.has_pin ?? false,
     demoMode: apiState.demo_mode ?? false,
+    trialExpired: apiState.trial_expired ?? false,
+    trialPrescriptionsUsed: apiState.trial_prescriptions_used ?? 0,
+    trialMaxPrescriptions: apiState.trial_max_prescriptions ?? 10,
+    trialDaysRemaining: apiState.trial_days_remaining ?? null,
     hydrated: true,
   }),
 }))

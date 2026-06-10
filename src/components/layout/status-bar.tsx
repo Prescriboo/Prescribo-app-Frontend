@@ -9,7 +9,7 @@ import { Wifi, WifiOff, Database, ShieldCheck, ShieldAlert, ShieldX, Clock, Refr
 
 export function StatusBar() {
   const router = useRouter()
-  const { demoMode } = useAuthStore()
+  const { demoMode, trialExpired, trialPrescriptionsUsed, trialMaxPrescriptions, trialDaysRemaining } = useAuthStore()
   const { status, backendVersion, refresh: refreshApi } = useApiSync()
   const [time, setTime] = useState<string>('')
   const [licenceStatus, setLicenceStatus] = useState<{
@@ -86,7 +86,13 @@ export function StatusBar() {
   }
 
   const getLicenseText = () => {
-    if (demoMode) return 'Demo active'
+    if (demoMode) {
+      if (trialExpired) return 'Trial expired'
+      if (trialDaysRemaining !== null && trialDaysRemaining !== undefined) {
+        return `Trial: ${trialPrescriptionsUsed}/${trialMaxPrescriptions} Rx · ${trialDaysRemaining}d left`
+      }
+      return 'Demo active'
+    }
     if (!licenceStatus) return 'License active'
     if (!licenceStatus.valid) return licenceStatus.grace_expired ? 'License locked' : 'License issue'
     if (licenceStatus.refresh_expired && licenceStatus.days_until_lock !== undefined) {
@@ -97,7 +103,7 @@ export function StatusBar() {
   }
 
   const getLicenseColor = () => {
-    if (demoMode) return 'text-warning'
+    if (demoMode) return trialExpired ? 'text-danger' : 'text-warning'
     if (!licenceStatus?.valid) return 'text-danger'
     if (licenceStatus.refresh_expired || licenceStatus.access_expired) return 'text-warning'
     return 'text-success'

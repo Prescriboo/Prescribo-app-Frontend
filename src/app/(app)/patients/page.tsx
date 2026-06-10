@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePatientStore } from '@/stores/patient-store'
 import { useUIStore } from '@/stores/ui-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +15,7 @@ export default function PatientsPage() {
   const router = useRouter()
   const { patients, addPatient, deletePatient } = usePatientStore()
   const { addToast } = useUIStore()
+  const { demoMode, trialExpired, trialPrescriptionsUsed, trialMaxPrescriptions, trialDaysRemaining } = useAuthStore()
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -33,19 +35,33 @@ export default function PatientsPage() {
     : patients
 
   const handleAdd = async () => {
+    if (trialExpired) {
+      addToast('Trial expired. Please activate your license to continue.', 'error')
+      router.push('/activate')
+      return
+    }
     if (!form.name.trim()) { addToast('Please enter patient name', 'error'); return }
-    await addPatient({
-      name: form.name,
-      age: form.age || '-',
-      gender: form.gender || '-',
-      place: form.place || '-',
-      email: form.email,
-      allergies: form.allergies,
-      conditions: form.conditions,
-    })
-    addToast('Patient added successfully', 'success')
-    setShowModal(false)
-    setForm({ name: '', age: '', gender: '', place: '', email: '', allergies: '', conditions: '' })
+    try {
+      await addPatient({
+        name: form.name,
+        age: form.age || '-',
+        gender: form.gender || '-',
+        place: form.place || '-',
+        email: form.email,
+        allergies: form.allergies,
+        conditions: form.conditions,
+      })
+      addToast('Patient added successfully', 'success')
+      setShowModal(false)
+      setForm({ name: '', age: '', gender: '', place: '', email: '', allergies: '', conditions: '' })
+    } catch (e: any) {
+      if (e.message?.includes('Trial expired') || e.message?.includes('activate')) {
+        addToast('Trial expired. Please activate your license to continue.', 'error')
+        router.push('/activate')
+      } else {
+        addToast(e.message || 'Failed to add patient', 'error')
+      }
+    }
   }
 
   return (
@@ -66,7 +82,7 @@ export default function PatientsPage() {
           <Button variant="outline" onClick={() => addToast('Export started...', 'info')}>
             <Download className="w-4 h-4" /> Export
           </Button>
-          <Button onClick={() => setShowModal(true)}>
+          <Button onClick={() => setShowModal(true)} disabled={trialExpired}>
             <Plus className="w-4 h-4" /> Add Patient
           </Button>
         </div>
