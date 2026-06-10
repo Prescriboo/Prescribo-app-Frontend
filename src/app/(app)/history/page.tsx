@@ -59,7 +59,7 @@ export default function HistoryPage() {
   ${cssLinks}
   <style>
     body { margin: 0; padding: 0; background: white; }
-    @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
+    @page { size: ${paperSize.toLowerCase()}; margin: 0; }
     .print-area { position: absolute; left: 0; top: 0; }
   </style>
 </head>

@@ -197,10 +197,10 @@ export default function PrescriptionsClientPage() {
     const style = document.createElement('style')
     style.id = 'print-injected-style'
     style.innerHTML = `
-      @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
+      @page { size: ${paperSize.toLowerCase()}; margin: 0; }
       body * { visibility: hidden; }
       .print-area, .print-area * { visibility: visible; }
-      .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .print-area { position: absolute; left: 0; top: 0; }
       .no-print { display: none !important; }
     `
     document.head.appendChild(style)
@@ -241,7 +241,7 @@ export default function PrescriptionsClientPage() {
   ${cssLinks}
   <style>
     body { margin: 0; padding: 0; background: white; }
-    @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
+    @page { size: ${paperSize.toLowerCase()}; margin: 0; }
     .print-area { position: absolute; left: 0; top: 0; }
   </style>
 </head>
