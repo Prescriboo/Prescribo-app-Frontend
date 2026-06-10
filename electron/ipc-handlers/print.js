@@ -1,6 +1,13 @@
 const { ipcMain, dialog, BrowserWindow } = require('electron')
 const fs = require('fs')
 
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))
+  ])
+}
+
 ipcMain.handle('print:toPDF', async (event, htmlContent, options = {}) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return { success: false, error: 'No window found' }
@@ -17,8 +24,13 @@ ipcMain.handle('print:toPDF', async (event, htmlContent, options = {}) => {
   if (htmlContent && typeof htmlContent === 'string') {
     createdWin = new BrowserWindow({ show: false, width: 800, height: 600 })
     await createdWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
+    // Give the hidden window a moment to load and apply stylesheets
+    await new Promise((resolve) => setTimeout(resolve, 500))
     targetWin = createdWin
   }
+
+  // Small delay after dialog dismissal to let the window settle
+  await new Promise((resolve) => setTimeout(resolve, 300))
 
   try {
     const pdfOptions = {
@@ -26,7 +38,11 @@ ipcMain.handle('print:toPDF', async (event, htmlContent, options = {}) => {
       margins: { marginType: 'none' },
       printBackground: true,
     }
-    const data = await targetWin.webContents.printToPDF(pdfOptions)
+    const data = await withTimeout(
+      targetWin.webContents.printToPDF(pdfOptions),
+      15000,
+      'PDF generation timed out after 15 seconds'
+    )
     fs.writeFileSync(filePath, data)
     return { success: true, path: filePath }
   } catch (err) {
@@ -46,6 +62,7 @@ ipcMain.handle('print:toPrinter', async (event, htmlContent, options = {}) => {
   if (htmlContent && typeof htmlContent === 'string') {
     createdWin = new BrowserWindow({ show: false, width: 800, height: 600 })
     await createdWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
+    await new Promise((resolve) => setTimeout(resolve, 500))
     targetWin = createdWin
   }
 

@@ -27,22 +27,50 @@ export default function HistoryPage() {
     setPrintingRx(rx)
     await new Promise((resolve) => requestAnimationFrame(resolve))
 
+    let printArea = document.querySelector('.print-area') as HTMLElement | null
+    if (!printArea) {
+      // Wait one more frame for the portal to commit
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      printArea = document.querySelector('.print-area') as HTMLElement | null
+    }
+    if (!printArea) {
+      addToast('Nothing to print', 'error')
+      setPrintingRx(null)
+      return
+    }
+
     const originalTitle = document.title
     document.title = patientName ? `${patientName} - Prescription` : 'Prescription'
 
-    const style = document.createElement('style')
-    style.id = 'pdf-injected-style'
-    style.innerHTML = `
-      @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
-      body * { visibility: hidden; }
-      .print-area, .print-area * { visibility: visible; }
-      .print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100%; }
-      .no-print { display: none !important; }
-    `
-    document.head.appendChild(style)
+    const clone = printArea.cloneNode(true) as HTMLElement
+    clone.style.left = ''
+    clone.style.top = ''
+    clone.style.position = ''
+
+    const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map((link) => `<link rel="stylesheet" href="${(link as HTMLLinkElement).href}">`)
+      .join('')
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  ${cssLinks}
+  <style>
+    body { margin: 0; padding: 0; background: white; }
+    @page { size: ${paperSize.toLowerCase()}; margin: 10mm; }
+    .print-area { position: absolute; left: 0; top: 0; }
+  </style>
+</head>
+<body>
+  ${clone.outerHTML}
+</body>
+</html>
+    `.trim()
 
     try {
-      const result = await window.electron.print.toPDF('', { pageSize: paperSize })
+      const result = await window.electron.print.toPDF(html, { pageSize: paperSize })
       if (result.success) {
         addToast(`PDF saved: ${result.path}`, 'success')
       } else if (result.cancelled) {
@@ -53,8 +81,6 @@ export default function HistoryPage() {
     } catch (err: any) {
       addToast(err.message || 'Failed to save PDF', 'error')
     } finally {
-      const s = document.getElementById('pdf-injected-style')
-      if (s) document.head.removeChild(s)
       document.title = originalTitle
       setPrintingRx(null)
     }
