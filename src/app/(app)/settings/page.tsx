@@ -84,6 +84,7 @@ export default function SettingsPage() {
 
 /* ===================== CLINIC TAB ===================== */
 function ClinicTab({ clinic, updateClinic, addToast }: any) {
+  const { uploadSignatureImage, removeSignatureImage, uploadSealImage, removeSealImage } = useSettingsStore()
   return (
     <div className="bg-white border border-border rounded-xl p-5 mb-5 shadow-sm max-w-[680px]">
       <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-slate-900">
@@ -164,6 +165,18 @@ function ClinicTab({ clinic, updateClinic, addToast }: any) {
           <label className="text-xs font-semibold text-slate-500">Signature Text</label>
           <Input value={clinic.signature} onChange={(e) => updateClinic({ signature: e.target.value })} />
         </div>
+        <ImageUploadField
+          label="Signature Image"
+          preview={clinic.signatureImageDataUrl}
+          onUpload={(file) => uploadSignatureImage(file)}
+          onRemove={() => removeSignatureImage()}
+        />
+        <ImageUploadField
+          label="Seal / Stamp Image"
+          preview={clinic.sealImageDataUrl}
+          onUpload={(file) => uploadSealImage(file)}
+          onRemove={() => removeSealImage()}
+        />
       </div>
       <div className="flex items-center gap-3 mt-4">
         <Button onClick={() => addToast('Clinic settings updated', 'success')}>
@@ -171,6 +184,52 @@ function ClinicTab({ clinic, updateClinic, addToast }: any) {
         </Button>
         <RestartTutorialButton addToast={addToast} />
       </div>
+    </div>
+  )
+}
+
+function ImageUploadField({ label, preview, onUpload, onRemove }: {
+  label: string
+  preview?: string
+  onUpload: (file: File) => void
+  onRemove: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) onUpload(file)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-slate-500">{label}</label>
+      {preview ? (
+        <div className="flex items-center gap-3">
+          <img src={preview} alt={label} className="h-16 w-auto object-contain border rounded p-1 bg-white" />
+          <button
+            onClick={onRemove}
+            className="text-xs text-red-500 hover:text-red-700 font-medium"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-300 text-slate-500 text-xs hover:bg-slate-50 transition w-fit"
+        >
+          <Upload className="w-3.5 h-3.5" /> Upload Image
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+      />
     </div>
   )
 }

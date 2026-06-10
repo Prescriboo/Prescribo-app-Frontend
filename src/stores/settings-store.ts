@@ -39,7 +39,11 @@ interface SettingsState extends AppSettings {
   updateSecurity: (data: Partial<AppSettings['security']>) => Promise<void>
   updateTemplateStyle: (style: AppSettings['templateStyle']) => void
   updatePrescriptionFooterHtml: (html: string) => Promise<void>
-  syncFromApi: (doctorProfile: any, appSettings?: any[]) => void
+  uploadSignatureImage: (file: File) => Promise<void>
+  removeSignatureImage: () => void
+  uploadSealImage: (file: File) => Promise<void>
+  removeSealImage: () => void
+  syncFromApi: (doctorProfile: any, appSettings?: any[], signatureImageDataUrl?: string, sealImageDataUrl?: string) => void
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -113,7 +117,51 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         set({ prescriptionFooterHtml: html })
       },
 
-      syncFromApi: (doctorProfile, appSettings) => {
+      uploadSignatureImage: async (file) => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+        set((state) => ({ clinic: { ...state.clinic, signatureImageDataUrl: dataUrl } }))
+        const state = get()
+        if (state._apiAvailable) {
+          try {
+            await settingsApi.doctorProfile.uploadSignature(file)
+          } catch (e: any) {
+            console.warn('Upload signature failed:', e.message)
+          }
+        }
+      },
+
+      removeSignatureImage: () => {
+        set((state) => ({ clinic: { ...state.clinic, signatureImageDataUrl: undefined } }))
+      },
+
+      uploadSealImage: async (file) => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+        set((state) => ({ clinic: { ...state.clinic, sealImageDataUrl: dataUrl } }))
+        const state = get()
+        if (state._apiAvailable) {
+          try {
+            await settingsApi.doctorProfile.uploadSeal(file)
+          } catch (e: any) {
+            console.warn('Upload seal failed:', e.message)
+          }
+        }
+      },
+
+      removeSealImage: () => {
+        set((state) => ({ clinic: { ...state.clinic, sealImageDataUrl: undefined } }))
+      },
+
+      syncFromApi: (doctorProfile, appSettings, signatureImageDataUrl, sealImageDataUrl) => {
         const updates: Partial<SettingsState> = {}
         if (doctorProfile) {
           updates.clinic = {
@@ -133,6 +181,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             email: doctorProfile.email || get().clinic.email,
             website: doctorProfile.website || get().clinic.website,
             signature: doctorProfile.signature_text ?? get().clinic.signature,
+            signatureImageDataUrl: signatureImageDataUrl ?? get().clinic.signatureImageDataUrl,
+            sealImageDataUrl: sealImageDataUrl ?? get().clinic.sealImageDataUrl,
             defaultLanguage: doctorProfile.default_language || get().clinic.defaultLanguage,
           }
         }

@@ -163,8 +163,38 @@ export function useApiSync(): UseApiSyncReturn {
           settingsApi.doctorProfile.get(),
           settingsApi.app.list().catch(() => []),
         ])
+
+        let signatureImageDataUrl: string | undefined
+        let sealImageDataUrl: string | undefined
+
+        if (profile) {
+          try {
+            const sigBlob = await settingsApi.doctorProfile.getSignature()
+            signatureImageDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result as string)
+              reader.onerror = reject
+              reader.readAsDataURL(sigBlob)
+            })
+          } catch (e: any) {
+            // No signature image on backend
+          }
+
+          try {
+            const sealBlob = await settingsApi.doctorProfile.getSeal()
+            sealImageDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result as string)
+              reader.onerror = reject
+              reader.readAsDataURL(sealBlob)
+            })
+          } catch (e: any) {
+            // No seal image on backend
+          }
+        }
+
         if (profile || appSettings) {
-          useSettingsStore.getState().syncFromApi(profile, appSettings)
+          useSettingsStore.getState().syncFromApi(profile, appSettings, signatureImageDataUrl, sealImageDataUrl)
         }
       } catch (e: any) {
         console.warn('Sync doctor profile failed:', e.message)

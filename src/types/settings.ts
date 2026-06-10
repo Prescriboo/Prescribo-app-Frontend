@@ -14,6 +14,8 @@ export interface ClinicSettings {
   email: string
   website: string
   signature: string
+  signatureImageDataUrl?: string
+  sealImageDataUrl?: string
   defaultLanguage: string
 }
 

@@ -236,6 +236,7 @@ export interface TemplateItem {
   header_style?: string
   show_logo?: boolean
   show_signature?: boolean
+  show_seal?: boolean
   show_watermark?: boolean
   show_reg_number?: boolean
   show_qualifications?: boolean
@@ -452,10 +453,28 @@ export const mastersApi = {
 // SETTINGS
 // ============================================================
 
+async function fetchBlob(path: string): Promise<Blob> {
+  const res = await fetch(await getApiUrl(path), { method: 'GET' })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.blob()
+}
+
 export const settingsApi = {
   doctorProfile: {
     get: () => get<DoctorProfile>('/api/settings/doctor-profile'),
     update: (data: Partial<DoctorProfile>) => put<DoctorProfile>('/api/settings/doctor-profile', data),
+    uploadSignature: (file: File) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return postForm<{ message: string; size: number }>('/api/settings/doctor-profile/signature', formData)
+    },
+    getSignature: () => fetchBlob('/api/settings/doctor-profile/signature'),
+    uploadSeal: (file: File) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return postForm<{ message: string; size: number }>('/api/settings/doctor-profile/seal', formData)
+    },
+    getSeal: () => fetchBlob('/api/settings/doctor-profile/seal'),
   },
   clinic: {
     get: () => get<ClinicSettings>('/api/settings/clinic'),

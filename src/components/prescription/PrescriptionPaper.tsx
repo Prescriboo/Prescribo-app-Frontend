@@ -222,11 +222,31 @@ export default function PrescriptionPaper({
 
       {templateStyle === 'header-footer' && (
         <>
-          <div className={cn('pb-2 flex justify-end', sigPadding)}>
-            <div className="text-center">
-              <div className={cn('font-[cursive] text-primary-dark mb-0.5', sigTextSize)}>
-                {clinic.signature}
+          <div className={cn('pb-2 flex items-end', sigPadding, clinic.sealImageDataUrl ? 'justify-between' : 'justify-end')}>
+            {clinic.sealImageDataUrl && (
+              <div className="text-center">
+                <img
+                  src={clinic.sealImageDataUrl}
+                  alt="Seal"
+                  className={cn('object-contain mx-auto', isPrint ? 'h-20' : 'h-16')}
+                />
+                <div className={cn('border-t border-slate-900 pt-0.5 text-[0.65rem]', sigWidth)}>
+                  Seal
+                </div>
               </div>
+            )}
+            <div className="text-center">
+              {clinic.signatureImageDataUrl ? (
+                <img
+                  src={clinic.signatureImageDataUrl}
+                  alt="Signature"
+                  className={cn('object-contain mx-auto', isPrint ? 'h-12' : 'h-10')}
+                />
+              ) : (
+                <div className={cn('font-[cursive] text-primary-dark mb-0.5', sigTextSize)}>
+                  {clinic.signature}
+                </div>
+              )}
               <div className={cn('border-t border-slate-900 pt-0.5 text-[0.65rem]', sigWidth)}>
                 Signature
               </div>
@@ -242,11 +262,31 @@ export default function PrescriptionPaper({
       )}
 
       {templateStyle === 'header-only' && (
-        <div className={cn('mt-auto flex justify-end', footerPadding)}>
-          <div className="text-center">
-            <div className={cn('font-[cursive] text-primary-dark mb-0.5', sigTextSize)}>
-              {clinic.signature}
+        <div className={cn('mt-auto flex items-end', footerPadding, clinic.sealImageDataUrl ? 'justify-between' : 'justify-end')}>
+          {clinic.sealImageDataUrl && (
+            <div className="text-center">
+              <img
+                src={clinic.sealImageDataUrl}
+                alt="Seal"
+                className={cn('object-contain mx-auto', isPrint ? 'h-20' : 'h-16')}
+              />
+              <div className={cn('border-t border-slate-900 pt-0.5 text-[0.65rem]', sigWidth)}>
+                Seal
+              </div>
             </div>
+          )}
+          <div className="text-center">
+            {clinic.signatureImageDataUrl ? (
+              <img
+                src={clinic.signatureImageDataUrl}
+                alt="Signature"
+                className={cn('object-contain mx-auto', isPrint ? 'h-12' : 'h-10')}
+              />
+            ) : (
+              <div className={cn('font-[cursive] text-primary-dark mb-0.5', sigTextSize)}>
+                {clinic.signature}
+              </div>
+            )}
             <div className={cn('border-t border-slate-900 pt-0.5 text-[0.65rem]', sigWidth)}>
               Signature
             </div>
