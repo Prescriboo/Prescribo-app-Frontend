@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electron', {
   api: {
     getUrl: () => ipcRenderer.invoke('api:getUrl'),
     isReady: () => ipcRenderer.invoke('api:isReady'),
+    getToken: () => ipcRenderer.invoke('api:getToken'),
   },
 
   // Database (SQLite via FastAPI backend)

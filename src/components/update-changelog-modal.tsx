@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import { X, Download, RotateCcw, Loader2, ExternalLink } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface Props {
   version: string;
@@ -30,7 +31,8 @@ export default function UpdateChangelogModal({ version, isOpen, onClose, onInsta
       const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/tags/${version}`);
       if (!res.ok) throw new Error('Failed to fetch release notes');
       const data = await res.json();
-      const html = data.body ? await marked(data.body) : '<p>No release notes available.</p>';
+      const rawHtml = data.body ? await marked(data.body) : '<p>No release notes available.</p>';
+      const html = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
       setNotes(html);
     } catch (err: any) {
       setError(err.message);

@@ -1,6 +1,16 @@
 const { ipcMain, dialog, BrowserWindow } = require('electron')
 const fs = require('fs')
 
+function escapeHtml(text) {
+  if (text == null) return ''
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 ipcMain.handle('export:toCSV', async (event, data, filename) => {
   const { filePath } = await dialog.showSaveDialog({
     defaultPath: filename || `export-${Date.now()}.csv`,
@@ -32,12 +42,12 @@ ipcMain.handle('export:toPDF', async (event, data, filename) => {
     html = data
   } else if (Array.isArray(data) && data.length > 0) {
     const headers = Object.keys(data[0])
-      .map((h) => `<th style="border:1px solid #ccc;padding:4px;">${h}</th>`)
+      .map((h) => `<th style="border:1px solid #ccc;padding:4px;">${escapeHtml(h)}</th>`)
       .join('')
     const rows = data
       .map((row) =>
         Object.values(row)
-          .map((v) => `<td style="border:1px solid #ccc;padding:4px;">${v ?? ''}</td>`)
+          .map((v) => `<td style="border:1px solid #ccc;padding:4px;">${escapeHtml(v)}</td>`)
           .join('')
       )
       .map((r) => `<tr>${r}</tr>`)

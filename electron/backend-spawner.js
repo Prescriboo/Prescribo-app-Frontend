@@ -54,7 +54,7 @@ function waitForBackend(port, maxRetries = 30, interval = 500) {
   })
 }
 
-async function startBackend(appDir) {
+async function startBackend(appDir, token) {
   if (backendProcess) {
     console.log('[Backend] Already running on port', backendPort)
     return backendPort
@@ -91,7 +91,7 @@ async function startBackend(appDir) {
   if (exePath) {
     console.log('[Backend] Starting bundled executable:', exePath, 'on port', port)
     backendProcess = spawn(exePath, [], {
-      env: { ...process.env, PORT: String(port) },
+      env: { ...process.env, PORT: String(port), API_TOKEN: token || '' },
       detached: false,
     })
   } else if (backendPath) {
@@ -133,7 +133,7 @@ async function startBackend(appDir) {
     console.log('[Backend] Starting Python backend:', backendPath, 'on port', port, 'using', pythonCmd)
     backendProcess = spawn(pythonCmd, [backendPath], {
       cwd: path.dirname(backendPath),
-      env: { ...process.env, PORT: String(port) },
+      env: { ...process.env, PORT: String(port), API_TOKEN: token || '' },
       detached: false,
     })
   } else {

@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const http = require('http')
+const crypto = require('crypto')
 
 // Global error logging (catches main process crashes in packaged builds)
 process.on('uncaughtException', (err) => {
@@ -26,6 +27,16 @@ if (process.platform === 'win32' && app.isPackaged) {
   app.disableHardwareAcceleration()
 }
 
+// Generate a secure local API token to prevent other processes from accessing the backend
+function generateApiToken() {
+  return crypto.randomBytes(32).toString('hex')
+}
+let apiToken = generateApiToken()
+
+function getApiToken() {
+  return apiToken
+}
+
 // IPC Handlers
 require('./ipc-handlers/api')
 require('./ipc-handlers/database')
@@ -36,7 +47,7 @@ require('./ipc-handlers/backup')
 require('./ipc-handlers/fs')
 
 const { startBackend, stopBackend } = require('./backend-spawner')
-const { setBackendUrl, getBackendUrl } = require('./ipc-handlers/api')
+const { setBackendUrl, getBackendUrl, setApiToken } = require('./ipc-handlers/api')
 const { initAutoUpdater, stopAutoUpdater } = require('./auto-updater')
 const { startStaticServer } = require('./static-server')
 
@@ -294,7 +305,7 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
       spellcheck: false,
     },
     // Rounded corners on macOS
@@ -471,9 +482,10 @@ app.whenReady().then(async () => {
   // Start Python backend in production; in dev it may already be running
   if (!isDev) {
     const appDir = path.dirname(__dirname)
-    const port = await startBackend(appDir)
+    const port = await startBackend(appDir, apiToken)
     if (port) {
       setBackendUrl(`http://127.0.0.1:${port}`)
+      setApiToken(apiToken)
     }
 
     // Start a tiny HTTP server to serve the Next.js static export.

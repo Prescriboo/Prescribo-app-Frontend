@@ -1,12 +1,20 @@
 const { ipcMain } = require('electron')
 const http = require('http')
 const os = require('os')
-const { getBackendUrl } = require('./api')
+const { getBackendUrl, getApiToken } = require('./api')
 
 function apiGet(path) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, getBackendUrl())
-    const req = http.get(url, (res) => {
+    const options = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      headers: {},
+    }
+    const token = getApiToken()
+    if (token) options.headers['X-API-Token'] = token
+    const req = http.get(options, (res) => {
       let data = ''
       res.on('data', (chunk) => { data += chunk })
       res.on('end', () => {
@@ -29,6 +37,7 @@ function apiPost(path, body) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, getBackendUrl())
     const postData = JSON.stringify(body)
+    const token = getApiToken()
     const options = {
       hostname: url.hostname,
       port: url.port,
@@ -37,6 +46,7 @@ function apiPost(path, body) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData),
+        ...(token ? { 'X-API-Token': token } : {}),
       },
       timeout: 10000,
     }

@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const http = require('http')
-const { getBackendUrl } = require('./api')
+const { getBackendUrl, getApiToken } = require('./api')
 
 const BACKUP_DIR = path.join(os.homedir(), '.prescribo', 'backups')
 
@@ -15,8 +15,15 @@ if (!fs.existsSync(BACKUP_DIR)) {
 function downloadFile(urlPath, destPath) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlPath, getBackendUrl())
+    const token = getApiToken()
+    const options = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      headers: token ? { 'X-API-Token': token } : {},
+    }
     const file = fs.createWriteStream(destPath)
-    const req = http.get(url, (res) => {
+    const req = http.get(options, (res) => {
       if (res.statusCode !== 200) {
         reject(new Error(`Download failed: HTTP ${res.statusCode}`))
         return
@@ -45,6 +52,7 @@ function uploadFile(urlPath, filePath) {
     const boundary = '----PrescriboBoundary' + Date.now()
     const fileName = path.basename(filePath)
     const fileData = fs.readFileSync(filePath)
+    const token = getApiToken()
 
     const pre = Buffer.from(
       `--${boundary}\r\n` +
@@ -62,6 +70,7 @@ function uploadFile(urlPath, filePath) {
       headers: {
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
         'Content-Length': body.length,
+        ...(token ? { 'X-API-Token': token } : {}),
       },
       timeout: 30000,
     }

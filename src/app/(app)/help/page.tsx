@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useHelpStore, type HelpArticle } from '@/stores/help-store'
 import { useUIStore } from '@/stores/ui-store'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import {
@@ -115,7 +116,7 @@ function ArticleContent({ article }: { article: HelpArticle }) {
       .replace(/\*\*(.+?)\*\*/g, '<strong class="text-slate-900">$1</strong>')
       .replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 bg-slate-100 rounded-md text-xs font-mono text-primary-dark border border-slate-200">$1</code>')
     elements.push(
-      <p key={idx} className="text-sm text-slate-600 leading-[1.7] my-3" dangerouslySetInnerHTML={{ __html: text }} />
+      <p key={idx} className="text-sm text-slate-600 leading-[1.7] my-3" dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />
     )
   })
 

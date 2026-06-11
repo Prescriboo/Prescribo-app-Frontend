@@ -1,12 +1,32 @@
 import { getApiUrl } from './api-config'
 
 // ============================================================
+// API Token helper
+// ============================================================
+
+async function getApiToken(): Promise<string | undefined> {
+  if (typeof window !== 'undefined' && (window as any).electron?.api?.getToken) {
+    try {
+      return await (window as any).electron.api.getToken()
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
+
+// ============================================================
 // HTTP helpers
 // ============================================================
 
 async function http<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = await getApiToken()
   const res = await fetch(await getApiUrl(path), {
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'X-API-Token': token } : {}),
+      ...(options?.headers || {}),
+    },
     ...options,
   })
   if (!res.ok) {
@@ -201,7 +221,6 @@ export interface ClinicSettings {
 export interface SecuritySettings {
   id?: number
   pin_enabled?: boolean
-  pin_hash?: string
   pin_last_changed?: string
   pin_attempts_remaining?: number
   pin_lockout_until?: string
@@ -458,7 +477,11 @@ export const mastersApi = {
 // ============================================================
 
 async function fetchBlob(path: string): Promise<Blob> {
-  const res = await fetch(await getApiUrl(path), { method: 'GET' })
+  const token = await getApiToken()
+  const res = await fetch(await getApiUrl(path), {
+    method: 'GET',
+    headers: token ? { 'X-API-Token': token } : {},
+  })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.blob()
 }

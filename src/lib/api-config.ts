@@ -41,9 +41,14 @@ export interface ApiHealth {
 
 export async function checkApiHealth(): Promise<ApiHealth> {
   try {
+    const token =
+      typeof window !== 'undefined' && (window as any).electron?.api?.getToken
+        ? await (window as any).electron.api.getToken()
+        : undefined
     const res = await fetch(await getApiUrl('/health'), {
       method: 'GET',
       signal: AbortSignal.timeout(3000),
+      headers: token ? { 'X-API-Token': token } : {},
     })
     if (!res.ok) {
       return { status: 'error', error: `HTTP ${res.status}` }

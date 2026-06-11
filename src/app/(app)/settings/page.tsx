@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 import {
   Building, Shield, Pill, Database, KeyRound, Cloud,
   Search, Plus, Trash2, Trash, Pencil, X, FileText, Download, Save, Upload,
@@ -958,7 +959,8 @@ function FooterTab({ addToast }: any) {
   const [html, setHtml] = useState(prescriptionFooterHtml)
 
   const handleSave = async () => {
-    await updatePrescriptionFooterHtml(html)
+    const clean = sanitizeHtml(html)
+    await updatePrescriptionFooterHtml(clean)
     addToast('Prescription footer saved', 'success')
   }
 
@@ -984,7 +986,7 @@ function FooterTab({ addToast }: any) {
         {html && (
           <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
             <div className="text-xs font-semibold text-slate-500 mb-2">Preview</div>
-            <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />
+            <div className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />
           </div>
         )}
       </div>

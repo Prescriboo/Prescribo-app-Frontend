@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 import { useSettingsStore } from '@/stores/settings-store'
 import { MedicineRow } from '@/types'
 import { Clock } from 'lucide-react'
@@ -255,7 +256,7 @@ export default function PrescriptionPaper({
           <div className={cn('mt-auto', isPrint ? 'pt-3' : 'pt-2', footerPadding)}>
             <div
               className="border-t border-gray-200 pt-2 text-center text-[0.6rem] text-slate-500 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: prescriptionFooterHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(prescriptionFooterHtml) }}
             />
           </div>
         </>

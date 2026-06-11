@@ -1,14 +1,16 @@
 const { ipcMain } = require('electron')
-const { getBackendUrl } = require('./api')
+const { getBackendUrl, getApiToken } = require('./api')
 
 const BASE = () => getBackendUrl() || 'http://127.0.0.1:8000'
 
 async function apiFetch(path, options = {}) {
   const url = `${BASE()}${path}`
+  const token = getApiToken()
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'X-API-Token': token } : {}),
       ...(options.headers || {}),
     },
   })
