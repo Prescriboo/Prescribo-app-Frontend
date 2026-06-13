@@ -108,6 +108,17 @@ jobs:
         working-directory: prescribo-nextjs
         run: npm run build
 
+      # Cache Electron/Builder downloads to avoid transient network failures
+      - name: Cache Electron Builder downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('prescribo-nextjs/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-builder-
+
       # =================================================================
       # 4. PACKAGE ELECTRON
       # =================================================================
@@ -115,7 +126,14 @@ jobs:
         working-directory: prescribo-nextjs
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx electron-builder ${{ matrix.builder_flag }} --publish=never
+        run: |
+          for i in 1 2 3; do
+            echo "[electron-builder] Attempt $i of 3..."
+            npx electron-builder ${{ matrix.builder_flag }} --publish=never && exit 0
+            echo "[electron-builder] Attempt $i failed."
+            if [ "$i" -eq 3 ]; then exit 1; fi
+            sleep 30
+          done
 
       # =================================================================
       # 5. UPLOAD ARTIFACTS
