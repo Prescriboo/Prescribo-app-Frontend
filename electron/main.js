@@ -19,6 +19,7 @@ process.on('unhandledRejection', (reason) => {
 if (process.platform === 'linux' && app.isPackaged) {
   app.commandLine.appendSwitch('no-sandbox')
   app.commandLine.appendSwitch('disable-setuid-sandbox')
+  app.disableHardwareAcceleration()
 }
 
 // Windows: disable hardware acceleration to prevent GPU driver crashes.
@@ -306,7 +307,10 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // On Linux packaged builds the Chromium sandbox is disabled at the
+      // command-line level; keep the renderer sandbox off to avoid SIGTRAP
+      // crashes on distros without unprivileged user namespaces.
+      sandbox: !(process.platform === 'linux' && app.isPackaged),
       spellcheck: false,
     },
     // Rounded corners on macOS
