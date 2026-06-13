@@ -17,7 +17,8 @@ process.on('unhandledRejection', (reason) => {
 // The app loads only local files, so this is safe and prevents crashes
 // on distros that don't support unprivileged user namespaces.
 if (process.platform === 'linux' && app.isPackaged) {
-  app.commandLine.appendSwitch('--no-sandbox')
+  app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-setuid-sandbox')
 }
 
 // Windows: disable hardware acceleration to prevent GPU driver crashes.

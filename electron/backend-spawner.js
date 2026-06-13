@@ -1,6 +1,7 @@
 const { spawn } = require('child_process')
 const path = require('path')
 const fs = require('fs')
+const os = require('os')
 const http = require('http')
 
 let backendProcess = null
@@ -74,13 +75,8 @@ async function startBackend(appDir, token) {
   let backendPath = possiblePaths.find((p) => fs.existsSync(p))
 
   // Also look for a bundled executable
-  // NOTE: electron-builder copies to 'prescribo-backend' (not 'prescribo-app-backend')
+  // electron-builder copies to 'prescribo-app-backend'
   const exePaths = [
-    path.join(appDir, '..', 'prescribo-backend', 'prescribo-backend'),
-    path.join(appDir, 'prescribo-backend', 'prescribo-backend'),
-    path.join(appDir, '..', 'prescribo-backend', 'prescribo-backend.exe'),
-    path.join(appDir, 'prescribo-backend', 'prescribo-backend.exe'),
-    // Legacy paths (for backwards compatibility)
     path.join(appDir, '..', 'prescribo-app-backend', 'prescribo-backend'),
     path.join(appDir, 'prescribo-app-backend', 'prescribo-backend'),
     path.join(appDir, '..', 'prescribo-app-backend', 'prescribo-backend.exe'),
@@ -89,8 +85,21 @@ async function startBackend(appDir, token) {
   const exePath = exePaths.find((p) => fs.existsSync(p))
 
   if (exePath) {
-    console.log('[Backend] Starting bundled executable:', exePath, 'on port', port)
+    // Ensure the backend has a writable working directory. Inside a packaged
+    // macOS .app bundle the default cwd is read-only, which breaks endpoints
+    // that need to write local state (e.g. demo mode, SQLite, backups).
+    const dataDir = path.join(os.homedir(), '.prescribo')
+    try {
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true })
+      }
+    } catch (err) {
+      console.warn('[Backend] Could not create data directory:', dataDir, err.message)
+    }
+
+    console.log('[Backend] Starting bundled executable:', exePath, 'on port', port, 'cwd:', dataDir)
     backendProcess = spawn(exePath, [], {
+      cwd: dataDir,
       env: { ...process.env, PORT: String(port), API_TOKEN: token || '' },
       detached: false,
     })
