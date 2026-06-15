@@ -116,11 +116,24 @@ async function startBackend(appDir, token) {
       console.warn('[Backend] Falling back to cwd:', dataDir)
     }
 
+    // On Windows, downloaded executables carry a "Zone.Identifier" alternate
+    // data stream that can block spawning with EPERM. Try to remove it before
+    // starting the backend.
+    if (process.platform === 'win32') {
+      try {
+        fs.unlinkSync(`${exePath}:Zone.Identifier`)
+        console.log('[Backend] Removed Zone.Identifier stream for', exePath)
+      } catch {
+        // No stream present or no permission — ignore.
+      }
+    }
+
     console.log('[Backend] Starting bundled executable:', exePath, 'on port', port, 'cwd:', dataDir)
     backendProcess = spawn(exePath, [], {
       cwd: dataDir,
       env: { ...process.env, PORT: String(port), API_TOKEN: token || '' },
       detached: false,
+      windowsHide: true,
     })
   } else if (backendPath) {
     // Find Python executable
@@ -168,6 +181,16 @@ async function startBackend(appDir, token) {
     console.warn('[Backend] Backend path not found. Searched:', possiblePaths)
     return null
   }
+
+  backendProcess.on('spawn', () => {
+    console.log('[Backend] Process spawned successfully, pid:', backendProcess.pid)
+    logBackend(`[SPAWN] pid=${backendProcess.pid}`)
+  })
+
+  backendProcess.on('error', (err) => {
+    console.error('[Backend] Failed to spawn:', err.message)
+    logBackend(`[SPAWN_ERROR] ${err.message}`)
+  })
 
   backendProcess.stdout.on('data', (data) => {
     const line = data.toString().trim()

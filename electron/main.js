@@ -584,7 +584,12 @@ app.whenReady().then(async () => {
 }).catch((err) => {
   console.error('[App] Startup failed:', err)
   logToFile('FATAL', '[App] Startup failed:', err)
-  dialog.showErrorBox('Prescribo Startup Error', err.message || String(err))
+  const msg = err.message || String(err)
+  let detail = msg
+  if (msg.includes('EPERM') || msg.includes('EACCES')) {
+    detail = `${msg}\n\nWindows or your antivirus blocked Prescribo from starting its local backend.\n\nTry these steps:\n1. Add an exclusion in Windows Security for the Prescribo install folder.\n2. Restore any quarantined Prescribo files.\n3. Right-click the installer → Properties → Unblock, then reinstall.`
+  }
+  dialog.showErrorBox('Prescribo Startup Error', detail)
   app.quit()
 })
 
