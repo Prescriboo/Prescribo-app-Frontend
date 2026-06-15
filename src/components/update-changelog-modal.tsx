@@ -28,7 +28,7 @@ export default function UpdateChangelogModal({ version, isOpen, onClose, onInsta
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/tags/${version}`);
+      const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/tags/v${version}`);
       if (!res.ok) throw new Error('Failed to fetch release notes');
       const data = await res.json();
       const rawHtml = data.body ? await marked(data.body) : '<p>No release notes available.</p>';

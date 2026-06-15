@@ -13,6 +13,7 @@ const { ipcMain, dialog, app, shell } = require('electron')
 
 let mainWindow = null
 let updateCheckInterval = null
+let installCallbacks = null
 const isMac = process.platform === 'darwin'
 
 // How often to check for updates (in production) - 30 minutes
@@ -69,11 +70,17 @@ ipcMain.handle('updater:install', () => {
     shell.openExternal(downloadUrl)
     return
   }
+  // Tell the main process this is an update-driven quit so the custom close
+  // dialog does not block the installer from launching.
+  if (installCallbacks && installCallbacks.onInstall) {
+    installCallbacks.onInstall()
+  }
   autoUpdater.quitAndInstall(false, true)
 })
 
-function initAutoUpdater(window) {
+function initAutoUpdater(window, callbacks = null) {
   mainWindow = window
+  installCallbacks = callbacks
 
   // Don't check for updates in development
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {

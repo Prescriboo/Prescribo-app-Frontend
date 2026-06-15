@@ -8,6 +8,7 @@ import { Minus, Square, X, Maximize2 } from 'lucide-react'
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false)
   const [platform, setPlatform] = useState('win32')
+  const [version, setVersion] = useState('')
   const router = useRouter()
   const pathname = usePathname()
 
@@ -15,6 +16,7 @@ export function TitleBar() {
     if (typeof window !== 'undefined' && (window as any).electron) {
       (window as any).electron.getPlatform().then((p: string) => setPlatform(p))
       ;(window as any).electron.window.isMaximized().then((m: boolean) => setIsMaximized(m))
+      ;(window as any).electron.getVersion().then((v: string) => setVersion(v))
     }
   }, [])
 
@@ -48,7 +50,7 @@ export function TitleBar() {
       <div className="flex items-center gap-3 px-4 h-full" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <img src="/app_icon_512.png" alt="Prescribo" className="w-5 h-5 rounded flex-shrink-0" />
         <span className="text-[13px] font-semibold text-white/90 tracking-wide">Prescribo</span>
-        <span className="text-[10px] font-medium text-white/40 bg-white/10 px-1.5 py-0.5 rounded">v2.4.1</span>
+        {version && <span className="text-[10px] font-medium text-white/40 bg-white/10 px-1.5 py-0.5 rounded">v{version}</span>}
       </div>
 
       {/* Center: draggable */}

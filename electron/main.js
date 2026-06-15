@@ -58,6 +58,7 @@ let splashWindow
 let licenseGuardianInterval = null
 let staticServer = null
 let staticServerUrl = null
+let isQuitting = false
 
 const isDev = !app.isPackaged
 const isMac = process.platform === 'darwin'
@@ -371,7 +372,7 @@ function createMainWindow() {
     mainWindow.show()
     mainWindow.focus()
     // Initialize auto-updater after window is shown
-    initAutoUpdater(mainWindow)
+    initAutoUpdater(mainWindow, { onInstall: () => { isQuitting = true } })
   })
 
   // Fallback: if ready-to-show never fires (e.g. load failure), show anyway
@@ -384,7 +385,7 @@ function createMainWindow() {
       }
       mainWindow.show()
       mainWindow.focus()
-      initAutoUpdater(mainWindow)
+      initAutoUpdater(mainWindow, { onInstall: () => { isQuitting = true } })
     }
   }, 8000)
   mainWindow.once('ready-to-show', () => clearTimeout(showFallback))
@@ -423,7 +424,6 @@ function createMainWindow() {
   })
 
   // Exit confirmation with backup prompt
-  let isQuitting = false
   mainWindow.on('close', async (e) => {
     if (isQuitting) return
     e.preventDefault()
@@ -541,6 +541,7 @@ app.on('activate', () => {
 // macOS: hide instead of quit
 app.on('before-quit', () => {
   console.log('[App] before-quit fired')
+  isQuitting = true
   saveWindowState()
   stopLicenseGuardian()
   stopBackend()

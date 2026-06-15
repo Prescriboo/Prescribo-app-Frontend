@@ -27,6 +27,9 @@ mac:
         - arm64
 win:
   icon: resources/icon.ico
+  # Keep filenames consistent with latest.yml and avoid spaces/dots that
+  # confuse electron-updater when artifacts are uploaded manually.
+  artifactName: '${productName}-${version}.${ext}'
   target:
     - target: nsis
       arch:
@@ -52,6 +55,8 @@ publish:
   repo: Prescribo-app-Frontend
   releaseType: release
 nsis:
+  # This name is what latest.yml references and what the in-app updater downloads.
+  artifactName: '${productName}-Setup-${version}.${ext}'
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
