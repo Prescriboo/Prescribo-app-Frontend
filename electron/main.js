@@ -5,12 +5,41 @@ const os = require('os')
 const http = require('http')
 const crypto = require('crypto')
 
+// Persistent log file for packaged builds (Windows / macOS / Linux)
+const LOG_DIR = path.join(os.homedir(), '.prescribo')
+const LOG_FILE = path.join(LOG_DIR, 'main.log')
+function ensureLogDir() {
+  try { if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true }) } catch {}
+}
+function logToFile(level, ...args) {
+  if (!app.isPackaged) return
+  try {
+    ensureLogDir()
+    const message = args.map((a) => {
+      if (a instanceof Error) return `${a.message}\n${a.stack}`
+      if (typeof a === 'object') return JSON.stringify(a)
+      return String(a)
+    }).join(' ')
+    fs.appendFileSync(LOG_FILE, `${new Date().toISOString()} [${level}] ${message}\n`)
+  } catch {}
+}
+if (app.isPackaged) {
+  const originalLog = console.log
+  console.log = (...args) => { originalLog(...args); logToFile('INFO', ...args) }
+  const originalError = console.error
+  console.error = (...args) => { originalError(...args); logToFile('ERROR', ...args) }
+  const originalWarn = console.warn
+  console.warn = (...args) => { originalWarn(...args); logToFile('WARN', ...args) }
+}
+
 // Global error logging (catches main process crashes in packaged builds)
 process.on('uncaughtException', (err) => {
   console.error('[MainProcess] Uncaught exception:', err)
+  logToFile('FATAL', '[MainProcess] Uncaught exception:', err)
 })
 process.on('unhandledRejection', (reason) => {
   console.error('[MainProcess] Unhandled rejection:', reason)
+  logToFile('FATAL', '[MainProcess] Unhandled rejection:', reason)
 })
 
 // AppImage/Linux sandbox fix: disable Chromium sandbox when packaged.
@@ -27,6 +56,11 @@ if (process.platform === 'linux' && app.isPackaged) {
 // the splash screen. This is a common, safe workaround.
 if (process.platform === 'win32' && app.isPackaged) {
   app.disableHardwareAcceleration()
+  // Also disable the Chromium sandbox on packaged Windows builds. Unsigned
+  // binaries and some enterprise/AV environments block the sandboxed renderer,
+  // causing the app to open the splash and then silently exit.
+  app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-setuid-sandbox')
 }
 
 // Generate a secure local API token to prevent other processes from accessing the backend
@@ -62,6 +96,24 @@ let isQuitting = false
 
 const isDev = !app.isPackaged
 const isMac = process.platform === 'darwin'
+
+// Single instance lock — must be requested early on Windows before any
+// windows are created, otherwise the named mutex can race and the app may
+// start a second instance or quit unexpectedly.
+const gotTheLock = app.requestSingleInstanceLock()
+console.log('[App] Single instance lock acquired:', gotTheLock)
+if (!gotTheLock) {
+  console.warn('[App] Another instance is running. Quitting.')
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    console.log('[App] Second instance detected. Focusing existing window.')
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
 
 // Window state persistence
 const windowStatePath = path.join(os.homedir(), '.prescribo', 'window-state.json')
@@ -185,11 +237,15 @@ function stopLicenseGuardian() {
 
 // ===================== SPLASH SCREEN =====================
 function createSplashWindow() {
+  const isWin = process.platform === 'win32'
   splashWindow = new BrowserWindow({
     width: 480,
     height: 320,
     frame: false,
-    transparent: true,
+    // Transparent frameless windows crash on some Windows GPU drivers; use a
+    // solid background color there instead.
+    transparent: !isWin,
+    backgroundColor: isWin ? '#1d4ed8' : undefined,
     alwaysOnTop: true,
     resizable: false,
     movable: true,
@@ -308,10 +364,9 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      // On Linux packaged builds the Chromium sandbox is disabled at the
-      // command-line level; keep the renderer sandbox off to avoid SIGTRAP
-      // crashes on distros without unprivileged user namespaces.
-      sandbox: !(process.platform === 'linux' && app.isPackaged),
+      // On packaged Linux and Windows builds the Chromium sandbox is disabled
+      // at the command-line level to prevent renderer crashes / silent exits.
+      sandbox: !((process.platform === 'linux' || process.platform === 'win32') && app.isPackaged),
       spellcheck: false,
     },
     // Rounded corners on macOS
@@ -526,6 +581,11 @@ app.whenReady().then(async () => {
   setTimeout(() => {
     startLicenseGuardian()
   }, 2000)
+}).catch((err) => {
+  console.error('[App] Startup failed:', err)
+  logToFile('FATAL', '[App] Startup failed:', err)
+  dialog.showErrorBox('Prescribo Startup Error', err.message || String(err))
+  app.quit()
 })
 
 app.on('window-all-closed', () => {
@@ -562,22 +622,6 @@ app.on('ready', () => {
   // Electron doesn't have a global online event, but we can use system network events
   // For now, we rely on the periodic guardian check
 })
-
-// Single instance lock
-const gotTheLock = app.requestSingleInstanceLock()
-console.log('[App] Single instance lock acquired:', gotTheLock)
-if (!gotTheLock) {
-  console.warn('[App] Another instance is running. Quitting.')
-  app.quit()
-} else {
-  app.on('second-instance', () => {
-    console.log('[App] Second instance detected. Focusing existing window.')
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.focus()
-    }
-  })
-}
 
 // ===================== IPC HANDLERS (Window Controls) =====================
 ipcMain.handle('window:minimize', () => {

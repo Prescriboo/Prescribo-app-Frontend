@@ -7,6 +7,18 @@ const http = require('http')
 let backendProcess = null
 let backendPort = null
 
+const BACKEND_LOG_DIR = path.join(os.homedir(), '.prescribo')
+const BACKEND_LOG_FILE = path.join(BACKEND_LOG_DIR, 'backend.log')
+function ensureBackendLogDir() {
+  try { if (!fs.existsSync(BACKEND_LOG_DIR)) fs.mkdirSync(BACKEND_LOG_DIR, { recursive: true }) } catch {}
+}
+function logBackend(line) {
+  try {
+    ensureBackendLogDir()
+    fs.appendFileSync(BACKEND_LOG_FILE, `${new Date().toISOString()} ${line}\n`)
+  } catch {}
+}
+
 function findAvailablePort(startPort = 8000) {
   return new Promise((resolve, reject) => {
     const server = require('net').createServer()
@@ -88,13 +100,20 @@ async function startBackend(appDir, token) {
     // Ensure the backend has a writable working directory. Inside a packaged
     // macOS .app bundle the default cwd is read-only, which breaks endpoints
     // that need to write local state (e.g. demo mode, SQLite, backups).
-    const dataDir = path.join(os.homedir(), '.prescribo')
+    let dataDir = path.join(os.homedir(), '.prescribo')
     try {
       if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true })
       }
     } catch (err) {
       console.warn('[Backend] Could not create data directory:', dataDir, err.message)
+    }
+    // If the home directory is not writable (common on locked-down Windows
+    // profiles or enterprise machines), fall back to the app directory so the
+    // backend can at least start.
+    if (!fs.existsSync(dataDir)) {
+      dataDir = appDir || path.dirname(exePath)
+      console.warn('[Backend] Falling back to cwd:', dataDir)
     }
 
     console.log('[Backend] Starting bundled executable:', exePath, 'on port', port, 'cwd:', dataDir)
@@ -151,22 +170,30 @@ async function startBackend(appDir, token) {
   }
 
   backendProcess.stdout.on('data', (data) => {
-    console.log('[Backend]', data.toString().trim())
+    const line = data.toString().trim()
+    console.log('[Backend]', line)
+    logBackend(`[OUT] ${line}`)
   })
 
   backendProcess.stderr.on('data', (data) => {
-    console.error('[Backend]', data.toString().trim())
+    const line = data.toString().trim()
+    console.error('[Backend]', line)
+    logBackend(`[ERR] ${line}`)
   })
 
   backendProcess.on('close', (code) => {
     console.log('[Backend] Process exited with code', code)
+    logBackend(`[EXIT] code=${code}`)
     backendProcess = null
     backendPort = null
   })
 
-  // Wait for health check
+  // Wait for health check. Windows PyInstaller onefile executables can take
+  // a long time to extract on first launch (antivirus, slow disk), so allow
+  // more retries there.
+  const healthRetries = process.platform === 'win32' ? 90 : 40
   try {
-    await waitForBackend(port, 40, 500)
+    await waitForBackend(port, healthRetries, 500)
     console.log('[Backend] Health check passed on port', port)
     return port
   } catch (err) {
